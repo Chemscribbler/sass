@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Player Registration</title>
+</head>
+
+<body>
+    <select>
+        {% for corp_id in corps %}
+        <option value="{{corp_id}}" SELECTED>{{corp_id}}</option>
+        {% endfor %}
+    </select>
+    <select>
+        {% for runner_id in runners %}
+        <option value="{{runner_id}}" SELECTED>{{runner_id}}</option>
+        {%endfor%}
+    </select>
+</body>
+
+</html>
