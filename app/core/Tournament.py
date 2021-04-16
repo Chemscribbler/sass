@@ -30,6 +30,12 @@ class Tournament:
         return f"<Tournament> {self.id}"
 
     def add_player(self, name, force=False, **kwargs):
+        """
+        Adds players to the Tournament
+        :name: str; name, non-unique
+        :force: bool; can ignore checking if the current round >0, untested
+        :*kwargs: player arguments, corp_id and runner_id
+        """
         if self.current_round > 0 and not force:
             raise ValueError("Cannot add after start")
         plr = Player(name, **kwargs)
@@ -37,9 +43,15 @@ class Tournament:
         return plr
 
     def active_players(self):
+        """
+        Utility function to get non-dropped players
+        """
         return {plr.id: plr for plr in self.player_dict.values() if not plr.dropped}
 
     def add_bye_player(self):
+        """
+        Internal function that returns a Bye player
+        """
         bye = Player("Bye")
         bye.id = -1
         bye.score = -1
@@ -47,6 +59,11 @@ class Tournament:
         return bye
 
     def pair_round(self):
+        """
+        No argument function that pairs a round.
+        Can be called repeatedly. In theory it should return the same pairing
+        every time, but in practice there is some shuffling
+        """
         self.rounds[self.current_round] = {"complete": False, "tables": {}}
         graph = nx.Graph()
         players = self.active_players()
@@ -56,6 +73,9 @@ class Tournament:
         self.make_tables(pairings, players, graph)
 
     def make_pairings(self, players, graph):
+        """
+        Internal function that makes the pairings by producing a graph
+        """
         for player in players.values():
             graph.add_node(player.id, player=player)
         for pair in combinations(players, 2):
@@ -78,6 +98,9 @@ class Tournament:
         return nx.max_weight_matching(graph, maxcardinality=True)
 
     def make_tables(self, pairings, players, graph):
+        """
+        Internal function that makes tables
+        """
         ranked_players = self.rank_players(players)
         for player in ranked_players:
             # Check if player in table
@@ -116,9 +139,27 @@ class Tournament:
                         continue
 
     def calc_score_cost(self, p1, p2):
+        """
+        Returns triangle number of score difference
+        """
         return (p1.score - p2.score + 1) * (p1.score - p2.score) / 6
 
     def get_side_tuple(self, p1, p2):
+        """
+        Checks if bye, returns 0, side bias doesn't play into bye pairing
+        Otherwise calcualte the cost for both players playing copr side
+        
+        Then check to see if there are any non-allowed matches. The algorithm
+        does not allow people to rematch with the same decks in swiss
+
+        If they've played both sides already return none,
+        If one of them has corp'd already, return the cost of the other pairing
+        Otherwise if one cost is lower, return the lower cost
+        Finally if the two costs are the same, flip a coin and return that one
+
+        :p1: Player object
+        :p2: Player object
+        """
         if p1.is_bye or p2.is_bye:
             return (p1.id, 0)
 
@@ -144,22 +185,50 @@ class Tournament:
             return (p2.id, p2_corps_cost)
 
     def calc_corp_cost(self, p1_side_bias, p2_side_bias):
+        """
+        calculates the max side bias of the two players before they play
+        then calculates the max side bias after p1 corps.
+        If the pairing has a lower max side bias this function will return 0
+        (basically if player 1 has run more, and player 2 has corp'd more they 
+        should get paired)
+        Otherwise figure out the max bias of the two after p1 corps
+        And return 8**(max_bias)
+
+        :p1_side_bias: side bias of player 1
+        :p2_side_bias: side bias of player 2
+        """
         init_max_bias = max(abs(p1_side_bias), abs(p2_side_bias))
         prime_max_bias = max(abs(p1_side_bias + 1), abs(p2_side_bias - 1))
         return 8 ** prime_max_bias * (prime_max_bias > init_max_bias)
 
     def get_next_table_num(self):
+        """
+        Utility function to get table numbers
+        """
         if 1 not in self.rounds[self.current_round]["tables"].keys():
             return 1
         else:
             return max(self.rounds[self.current_round]["tables"].keys()) + 1
 
     def report_result(self, table_number, c_score, r_score, pick_round=None):
+        """
+        Records score for a Table
+        This can overwrite previous results
+
+        :table_number: the ID for a table
+        :c_score: points the corp earns
+        :r_score: points the runner earns
+        :pick_round: the round to look for the table in, defaults to the current round
+        """
         if pick_round is None:
             pick_round = self.current_round
         self.rounds[pick_round]["tables"][table_number].report_result(c_score, r_score)
 
     def close_round(self):
+        """
+        Closes out the round, scores each table and recalculates SoS and ESoS
+        Also creates a savefile
+        """
         if not self.is_round_complete(self.current_round):
             raise InterruptedError("At least 1 table is not reported")
 
@@ -172,12 +241,25 @@ class Tournament:
         self.save_tournament()
 
     def is_round_complete(self, rnd):
+        """
+        Just a sanity check that every table has a corp score
+        """
         for table in self.rounds[rnd]["tables"].values():
             if table.corp_score is None:
+                return False
+            if table.runner_score is None:
                 return False
         return True
 
     def rank_players(self, p_dict):
+        """
+        Takes any dictionary where dictionary values have .esos, .sos, .score
+        values and ranks them according to that
+
+        returns a list of objects orderd in descending rate (highest player first)
+
+        :p_dict:
+        """
         p_list = [plr for plr in p_dict.values()]
         p_list.sort(key=lambda player: player.esos, reverse=True)
         p_list.sort(key=lambda player: player.sos, reverse=True)
@@ -185,12 +267,24 @@ class Tournament:
         return p_list
 
     def start_tournament(self):
+        """
+        Moves the tournament out of the 0th round.
+
+        This turns off the ability to add players
+        """
         if self.current_round != 0:
             raise ValueError("Tournament already started")
         self.current_round = 1
         self.pair_round()
 
     def score_tables(self):
+        """
+        Iterates through tables in the current round and adds the score to
+        each player.
+
+        Might want to have an option to iterate through all rounds, reseting
+        player scores
+        """
         pd = self.player_dict
 
         for table in self.rounds[self.current_round]["tables"].values():
@@ -219,6 +313,10 @@ class Tournament:
                     corp.opponents[runner.id] = 1
 
     def calc_sos(self):
+        """
+        Calculates strength of schedule by looping through each player
+        and then loops through each player's dictionary of opponents
+        """
         pd = self.player_dict
         for player in pd.values():
             opp_score = 0
@@ -237,6 +335,10 @@ class Tournament:
             player.sos = opp_score / opp_rounds_played
 
     def calc_esos(self):
+        """
+        Calculates extended strength of schedule by looping through each player
+        and then loops through each player's dictionary of opponents
+        """
         pd = self.player_dict
         for player in pd.values():
             opp_sos = 0
@@ -255,6 +357,9 @@ class Tournament:
             player.esos = opp_sos / opp_rounds_played
 
     def testing(self, num_players):
+        """
+        Utility function to create simulated players
+        """
         with open("Names.csv", "r") as names:
             reader = csv.reader(names, delimiter="\t")
             for row in reader:
@@ -265,6 +370,9 @@ class Tournament:
         self.start_tournament()
 
     def sim_round(self):
+        """
+        Utility function to run round and randomly assign results
+        """
         for num, table in self.rounds[self.current_round]["tables"].items():
             try:
                 diff = (
@@ -282,6 +390,12 @@ class Tournament:
         self.close_round()
 
     def save_tournament(self, name=None):
+        """
+        Saves tournament to a modified json that tracks the object. Allows the objects
+        to be rebuilt from the file.
+
+        :name: filename
+        """
         if name is None:
             name = f"{self.id}_round_{self.current_round}_start.json"
 
@@ -289,6 +403,9 @@ class Tournament:
             f.write(jsonpickle.encode(self,keys=True))
 
     def export_pairings(self, rnd=None):
+        """
+        Pairings only export json
+        """
         if rnd is None:
             rnd = self.current_round
 
@@ -325,6 +442,11 @@ class Tournament:
         return pairings
 
     def import_pairings(self, rnd, f, overwrite=False):
+        """
+        :rnd: what round this will check/overwrite
+        :f: file_name
+        :overwrite: overwrite all tables and record results
+        """
         with open(f, "r") as imp:
             results_json = json.load(imp)
             for json_table in results_json:
@@ -427,47 +549,6 @@ class Tournament:
                         "isBye": table.bye_table,
                     }
                 )
-
-        return exp_json
-
-    def exp_rnrs_standings(self):
-        """
-        Creates json that matches ABR format
-        """
-        exp_json = {
-            "name": self.id,
-            "date": self.t_date,
-            "cutToTop": 0,
-            "preliminaryRounds": self.current_round,
-            "tournamentOrganiser": {"nrdbId": "", "nrdbUsername": "SASS"},
-            "players": {},
-            "eliminationPlayers": {},
-            "uploadedFrom": "SASS",
-            "links": {
-                0: {
-                    "rel": "schemaderivedfrom",
-                    "href": "http://steffens.org/nrtm/nrtm-schema.json",
-                },
-                1: {
-                    "rel": "uploadedfrom",
-                    "href": "https://github.com/Chemscribbler/Netrunner/tree/main/SingleSided_App",
-                },
-            },
-        }
-
-        player_list = self.rank_players(self.player_dict)
-        for i, plr in enumerate(player_list):
-            exp_json["players"][i] = {
-                "id": plr.id,
-                "name": plr.name,
-                "rank": i + 1,
-                "corpIdentity": plr.corp_id,
-                "runnerIdentity": plr.runner_id,
-                "matchPoints": plr.score,
-                "strengthOfSchedule": str(round(plr.sos, 4)),
-                "extendedStrengthOfSchedule": str(round(plr.esos, 6)),
-                "sideBalance": plr.side_bias,
-            }
 
         return exp_json
 
