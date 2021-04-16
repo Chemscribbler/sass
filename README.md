@@ -20,7 +20,7 @@ My current plan would be to try and build out a simple app using Flask and HTML/
 
 ## Current Outline
 
-Right now a simple python app exists that can import and export jsons in a particular format (closely matching [cobra's](cobr.ai)).
+Right now a simple python app exists that can import and export jsons in a particular format (closely matching [cobra's](http://cobr.ai/)).
 It does this using a custom Tournament class. In every tournament there is a dictionary of players (each made of a Player class). Every round goes into a round
 dictionary and contains some admin info about the round and a dictionary of Tables (the final class).
 
