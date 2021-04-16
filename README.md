@@ -10,8 +10,8 @@ Currently I've got a very simple system set up where I can run single CLI comman
 
 Things I would like to do:
 - Have a basic web interface to allow someone to run a tournament (real paint the rest of the owl shit here)
-- Store tournament data in some sore of database- and have the front-end communicate with that (though maybe this isn't necessary and tournaments could be run in memory... but from the little I know this sounds bad)
-- Improve my backend to be cleaner and easier to improve
+- Store tournament data in some sort of database- and have the front-end communicate with that (though maybe this isn't necessary and tournaments could be run in memory... but from the little I know this sounds bad)
+- Improve my backend to be cleaner and easier to tinker with
 
 I don't really know any web dev or database stuff. Trying to teach myself a little. So I'd be happy with help ranging from drawing some boxes and saying use this tool, to being a person I can bug with questions, to just doing full pull requests/development.
 
