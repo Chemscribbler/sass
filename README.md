@@ -28,7 +28,9 @@ The notable functions right now are:
 - Tournament.add_player(name, corp_id*, runner_id*)
 - Tournament.pair_round()
 - Tournament.report_result(table_id, c_score, r_score, round*)
-- Tournament.export_standigns()
+- Tournament.export_standings()
+
+To run a tournament you use add_players, start_tournament, pair_round, report_result, and close_round. Can use import_pairings, potentially with the overwrite, to report pairings. 
 
 
 ## How the pairing algorithm works
