@@ -13,7 +13,7 @@ Things I would like to do:
 - Store tournament data in some sort of database- and have the front-end communicate with that (though maybe this isn't necessary and tournaments could be run in memory... but from the little I know this sounds bad)
 - Improve my backend to be cleaner and easier to tinker with
 
-I don't really know any web dev or database stuff. Trying to teach myself a little. So I'd be happy with help ranging from drawing some boxes and saying use this tool, to being a person I can bug with questions, to just doing full pull requests/development.
+I don't really know any web dev or database stuff. Trying to teach myself a little. So I'd be happy with help ranging from drawing some boxes and saying use this tool, to being a person I can bug with questions, to just doing full pull requests/development. If someone wants to help develop I'm happy to write up more specs/user stories, otherwise the best thing would be some people I could ask questions to.
 
 My current plan would be to try and build out a simple app using Flask and HTML/CSS to do all my front end stuff, figure out some way to convert my app that's running in memory to working with a database.
 
