@@ -148,7 +148,7 @@ class Tournament:
         """
         Checks if bye, returns 0, side bias doesn't play into bye pairing
         Otherwise calcualte the cost for both players playing copr side
-        
+
         Then check to see if there are any non-allowed matches. The algorithm
         does not allow people to rematch with the same decks in swiss
 
@@ -189,7 +189,7 @@ class Tournament:
         calculates the max side bias of the two players before they play
         then calculates the max side bias after p1 corps.
         If the pairing has a lower max side bias this function will return 0
-        (basically if player 1 has run more, and player 2 has corp'd more they 
+        (basically if player 1 has run more, and player 2 has corp'd more they
         should get paired)
         Otherwise figure out the max bias of the two after p1 corps
         And return 8**(max_bias)
@@ -400,7 +400,7 @@ class Tournament:
             name = f"{self.id}_round_{self.current_round}_start.json"
 
         with open(name, "w") as f:
-            f.write(jsonpickle.encode(self,keys=True))
+            f.write(jsonpickle.encode(self, keys=True))
 
     def export_pairings(self, rnd=None):
         """
@@ -467,7 +467,7 @@ class Tournament:
                             self.rounds[rnd]["tables"][tid] = Table(
                                 rnd,
                                 self.add_bye_player(),
-                                pd[s(json_table["runner_player"]["id"]],
+                                pd[json_table["runner_player"]["id"]],
                                 json_table["table"],
                             )
                         except KeyError:
@@ -544,7 +544,10 @@ class Tournament:
                 table_list.append(
                     {
                         "table": table.id,
-                        "corp": {"id": table.corp_id, "score": table.corp_score,},
+                        "corp": {
+                            "id": table.corp_id,
+                            "score": table.corp_score,
+                        },
                         "runner": {"id": table.runner_id, "score": table.runner_score},
                         "isBye": table.bye_table,
                     }
@@ -570,4 +573,4 @@ def tournament_from_csv(filepath, name):
 
 def load_tournament(filepath):
     with open(filepath, "r") as f:
-        return jsonpickle.decode(f.read(),keys=True)
+        return jsonpickle.decode(f.read(), keys=True)
