@@ -40,3 +40,48 @@ def init_db_command():
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+
+
+def get_players(tid):
+    return (
+        get_db()
+        .execute(
+            "SELECT * FROM player WHERE tid = ?"
+            "ORDER BY score DESC, sos DESC, esos DESC",
+            (tid,),
+        )
+        .fetchall()
+    )
+
+
+def get_matches(tid, rnd):
+    """
+    tid: Tournament ID
+    round: Round to get matches from
+    """
+    return (
+        get_db()
+        .execute(
+            "SELECT match.id, match.corp_id, corp_plr.p_name, match.runner_id, runner_plr.p_name"
+            "FROM match"
+            "WHERE match.id = ? AND match.rnd = ?"
+            "LEFT JOIN player corp_plr"
+            "ON match.corp_id = corp_plr.id"
+            "LEFT JOIN player runner_plr"
+            "ON match.runner_id = runner_plr.id",
+            (
+                tid,
+                rnd,
+            ),
+        )
+        .fetchall()
+    )
+
+
+def get_tournament(tid):
+    t = get_db().execute("SELECT * FROM tournament WHERE id = ?", (tid,)).fetchone()
+
+    if t is None:
+        abort(404, f"Tournament id {tid} does not exist")
+
+    return t

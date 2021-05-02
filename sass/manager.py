@@ -14,7 +14,7 @@ from flask import (
 
 from werkzeug.exceptions import abort
 
-from sass.db import get_db
+from sass.db import get_db, get_players, get_matches, get_tournament
 
 bp = Blueprint("manager", __name__)
 
@@ -126,48 +126,3 @@ def remove_player(tid, pid):
     db.execute("DELETE FROM player WHERE id = ?", (pid,))
     db.commit()
     return redirect(url_for("manager.admin", tid=tid))
-
-
-def get_tournament(tid):
-    t = get_db().execute("SELECT * FROM tournament WHERE id = ?", (tid,)).fetchone()
-
-    if t is None:
-        abort(404, f"Tournament id {tid} does not exist")
-
-    return t
-
-
-def get_players(tid):
-    return (
-        get_db()
-        .execute(
-            "SELECT * FROM player WHERE tid = ?"
-            "ORDER BY score DESC, sos DESC, esos DESC",
-            (tid,),
-        )
-        .fetchall()
-    )
-
-
-def get_matches(tid, rnd):
-    """
-    tid: Tournament ID
-    round: Round to get matches from
-    """
-    return (
-        get_db()
-        .execute(
-            "SELECT match.id, match.corp_id, corp_plr.p_name, match.runner_id, runner_plr.p_name"
-            "FROM match"
-            "WHERE match.id = ? AND match.rnd = ?"
-            "LEFT JOIN player corp_plr"
-            "ON match.corp_id = corp_plr.id"
-            "LEFT JOIN player runner_plr"
-            "ON match.runner_id = runner_plr.id",
-            (
-                tid,
-                rnd,
-            ),
-        )
-        .fetchall()
-    )
