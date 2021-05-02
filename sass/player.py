@@ -1,14 +1,15 @@
+from json import dumps
+
+
 class Player:
     """
-    Player object with a few functions, should build an decompose quickly
+    Player object with a few functions, only built when doing pairings
     """
-    PID = 0
-    def __init__(self, plr_name, ID=None, corp_id=None, runner_id=None):        
-        if ID is None:
-            ID = Player.PID
-            Player.PID += 1
+
+    def __init__(self, plr_name, tid, _id=None, corp_id=None, runner_id=None):
         self.plr_name = plr_name
-        self.ID = ID
+        self.tid = tid
+        self._id = _id
         self.corp_id = corp_id
         self.runner_id = runner_id
 
@@ -17,7 +18,7 @@ class Player:
         self.esos = 0.0
         self.side_bias = 0
 
-        # self.opponents is a dictionary key'd by opponent ID
+        # self.opponents is a dictionary key'd by opponent _id
         # value is the side they played against the opponent
         self.opponents = {}
 
@@ -26,7 +27,20 @@ class Player:
         self.recieved_bye = False
 
     def __repr__(self):
-        return f"<Player> {self.ID} : {self.plr_name}"
+        return f"<Player> {self._id} : {self.plr_name}"
+
+    def to_db(self):
+        return {
+            "id": self._id,
+            "tid": self.tid,
+            "corp_id": self.corp_id,
+            "runner_id": self.runner_id,
+            "score": self.score,
+            "sos": self.sos,
+            "esos": self.esos,
+            "recieved_bye": self.recieved_bye,
+            "opponents": dumps(self.opponents),
+        }
 
     def allowable_pairings(self, opp_id):
         """

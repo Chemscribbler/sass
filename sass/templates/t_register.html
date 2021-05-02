@@ -1,0 +1,32 @@
+{% extends 't_base.html' %}
+
+{% block content %}
+<form method="post" class="row g-3">
+    <div class="col-md-3">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name">
+    </div>
+    <div class="col-md-3">
+        <label for="corp_id">Corp ID</label>
+        <select class="form-select" name="corp_id">
+            <option selected>-</option>
+            {% for corp_id in data.ids.corps %}
+            <option>{{corp_id}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="runner_id">Corp ID</label>
+        <select class="form-select" name="runner_id">
+            <option selected>-</option>
+            {% for runner_id in data.ids.runners %}
+            <option>{{runner_id}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Register Player</button>
+    </div>
+</form>
+
+{% endblock %}

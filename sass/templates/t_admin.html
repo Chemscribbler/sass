@@ -1,0 +1,52 @@
+{% extends "t_base.html" %}
+
+{% block content %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Score</th>
+            <th>SoS</th>
+            <th>ESoS</th>
+            <th>Side Bias</th>
+            <th>Corp ID</th>
+            <th>Runner ID</th>
+            <th>Dropped</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    {% for plr in data.players %}
+    <tr>
+        <td>{{loop.index0 +1}}</td>
+        <td>{{plr['p_name']}}</td>
+        <td>{{plr['score']}}</td>
+        <td>{{plr['sos']}}</td>
+        <td>{{plr['esos']}}</td>
+        <td>{{plr['bias']}}</td>
+        <td>{{plr['corp_id']}}</td>
+        <td>{{plr['runner_id']}}</td>
+        <td>{{ plr['active']== 0 }}</td>
+        <td>
+            {% if plr.active %}
+            <form action={{ url_for('manager.drop_player' , tid=plr.tid, pid=plr.id) }} method="put">
+                <button type="submit" class="btn btn-warning">▼</button>
+            </form>
+            {% else %}
+            <form action={{ url_for('manager.undrop_player' , tid=plr.tid, pid=plr.id) }} method="put">
+                <button type="submit" class="btn btn-success">▲</button>
+            </form>
+            {% endif %}
+            <form action={{ url_for('manager.remove_player' , tid=plr.tid, pid=plr.id) }} method="post">
+                <button type="submit" class="btn btn-danger">🗑</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<div>
+    <form action={{ url_for('manager.register', tid=data.t.id) }} method="GET">
+        <button type="submit" class="btn btn-primary">Add Player</button>
+    </form>
+</div>
+
+{% endblock %}

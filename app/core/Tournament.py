@@ -163,7 +163,6 @@ class Tournament:
         if p1.is_bye or p2.is_bye:
             return (p1.id, 0)
 
-        corp_player = None
         p1_corps_cost = self.calc_corp_cost(p1.side_bias, p2.side_bias)
         p2_corps_cost = self.calc_corp_cost(p2.side_bias, p1.side_bias)
 

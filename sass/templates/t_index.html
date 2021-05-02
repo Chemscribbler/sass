@@ -1,0 +1,29 @@
+{% extends 't_base.html'%}
+
+{% block content %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Score</th>
+            <th>SoS</th>
+            <th>ESoS</th>
+            <th>Side Bias</th>
+            <th>Corp ID</th>
+            <th>Runner ID</th>
+        </tr>
+    </thead>
+    {% for plr in data.players %}
+    <tr>
+        <td>{{plr['p_name']}}</td>
+        <td>{{plr['score']}}</td>
+        <td>{{plr['sos']}}</td>
+        <td>{{plr['esos']}}</td>
+        <td>{{plr['bias']}}</td>
+        <td>{{plr['corp_id']}}</td>
+        <td>{{plr['runner_id']}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

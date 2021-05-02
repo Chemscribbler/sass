@@ -10,10 +10,13 @@ from random import random
 
 
 class Tournament:
-    def __init__(self, ID=None, title=None, t_date=None, current_rnd=None):
-        if ID is None:
-            ID = str(uuid4())
-        self.ID = ID
+    """
+    This object is basically only created for making pairings
+    Maybe long term I move away from this object model
+    Could probably stip a lot of the extraneous stuff out
+    """
+    def __init__(self, _id=None, title=None, t_date=None, current_rnd=None):
+        self._id = _id
         if t_date is None:
             t_date = date.today().strftime("%Y-%m-%d")
         self.t_date = t_date
@@ -23,14 +26,14 @@ class Tournament:
         self.current_rnd = current_rnd
 
     def __repr__(self):
-        return f"<Tournament> {self.ID}: {self.title}"
+        return f"<Tournament> {self._id}: {self.title}"
 
     def to_db(self):
         """
-        Return: Dictionary with ID, title, t_date, current_rnd
+        Return: Dictionary with _id, title, t_date, current_rnd
         """
         return {
-            "id": self.ID,
+            "id": self._id,
             "title": self.title,
             "t_date": self.t_date,
             "current_rnd": self.current_rnd,
@@ -48,7 +51,7 @@ class Tournament:
         graph = nx.Graph()
         if len(plr_list) % 2 == 1:
             plr_list.append(add_bye_player())
-        players = {plr.ID: plr for plr in plr_list}
+        players = {plr._id: plr for plr in plr_list}
         pairings = self.make_pairings(players, graph)
         return self.make_matches(pairings, players, graph)
 
@@ -59,7 +62,7 @@ class Tournament:
         Returns list of sets
         """
         for player in players.values():
-            graph.add_node(player.ID, player=player)
+            graph.add_node(player._id, player=player)
         for pair in combinations(players, 2):
             corp_player_id, side_bias_cost = get_side_tuple(
                 players[pair[0]], players[pair[1]]
@@ -82,24 +85,24 @@ class Tournament:
         for player in ranked_players:
             # Check if player in table
             for match in matches:
-                if match.corp_id == player.ID or match.runner_id == player.ID:
+                if match.corp_id == player._id or match.runner_id == player._id:
                     break
             else:
                 # Build table logic
                 for pair in pairings:
-                    if player.ID in pair:
-                        if player.ID == pair[0]:
+                    if player._id in pair:
+                        if player._id == pair[0]:
                             player_position = 0
                         else:
                             player_position = 1
                         opp_position = 1 - player_position
-                        if graph[pair[0]][pair[1]]["corp_player"] == player.ID:
+                        if graph[pair[0]][pair[1]]["corp_player"] == player._id:
                             new_match = Match(
                                 self.current_rnd,
                                 players[pair[player_position]],
                                 players[pair[opp_position]],
                                 num=len(matches),
-                                tid=self.ID,
+                                tid=self._id,
                             )
                         else:
                             new_match = Match(
@@ -107,7 +110,7 @@ class Tournament:
                                 players[pair[opp_position]],
                                 players[pair[player_position]],
                                 num=len(matches),
-                                tid=self.ID,
+                                tid=self._id,
                             )
 
                         matches.append(new_match)
@@ -121,7 +124,7 @@ def add_bye_player():
     Internal function that returns a Bye player
     """
     bye = Player("Bye")
-    bye.ID = -1
+    bye._id = -1
     bye.score = -1
     bye.is_bye = True
     return bye
@@ -151,27 +154,27 @@ def get_side_tuple(p1, p2):
     :p2: Player object
     """
     if p1.is_bye or p2.is_bye:
-        return (p1.ID, 0)
+        return (p1._id, 0)
 
     p1_corps_cost = calc_corp_cost(p1.side_bias, p2.side_bias)
     p2_corps_cost = calc_corp_cost(p2.side_bias, p1.side_bias)
 
-    allowable_pairings = p1.allowable_pairings(p2.ID)
+    allowable_pairings = p1.allowable_pairings(p2._id)
     if allowable_pairings is None:
         return (None, None)
     if allowable_pairings == 1:
-        return (p1.ID, p1_corps_cost)
+        return (p1._id, p1_corps_cost)
     if allowable_pairings == -1:
-        return (p2.ID, p2_corps_cost)
+        return (p2._id, p2_corps_cost)
     if p1_corps_cost != p2_corps_cost:
         if p1_corps_cost < p2_corps_cost:
-            return (p1.ID, p1_corps_cost)
+            return (p1._id, p1_corps_cost)
         else:
-            return (p2.ID, p2_corps_cost)
+            return (p2._id, p2_corps_cost)
     if random() > 0.5:
-        return (p1.ID, p1_corps_cost)
+        return (p1._id, p1_corps_cost)
     else:
-        return (p2.ID, p2_corps_cost)
+        return (p2._id, p2_corps_cost)
 
 
 def calc_corp_cost(p1_side_bias, p2_side_bias):
