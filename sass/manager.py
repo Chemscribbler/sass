@@ -97,6 +97,7 @@ def register(tid):
 
 @bp.route("/<int:tid>/admin", methods=["GET", "POST", "PUT"])
 def admin(tid):
+    # Add post method for starting the tournament
     t = get_tournament(tid)
     plrs = get_players(tid)
     return render_template("t_admin.html", data={"t": t, "players": plrs})
@@ -147,6 +148,7 @@ def pairings(tid, rnd):
 
 @bp.route("/<int:tid>/<int:rnd>/admin", methods=["GET", "POST"])
 def admin_pairings(tid, rnd):
+    # Add post method for closing the round
     t = get_tournament(tid)
     plrs = get_players(tid)
     matches = get_matches(tid, rnd)
