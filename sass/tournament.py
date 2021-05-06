@@ -23,6 +23,10 @@ def pair_round(tid, rnd):
                 i + 1,
             ),
         )
+    db.execute(
+        "UPDATE tournament SET current_rnd = ? WHERE id = ?",
+        (rnd + 1, tid),
+    )
     db.commit()
     score_byes(tid, rnd)
 
@@ -241,3 +245,12 @@ def record_result(mid, corp_score, runner_score):
         ),
     )
     db.commit()
+
+
+def get_matches(tid, rnd):
+    db = get_db()
+    return db.execute(
+        """SELECT * from match
+        WHERE tid = ? AND rnd = ?""",
+        (tid, rnd),
+    ).fetchall()

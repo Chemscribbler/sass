@@ -12,6 +12,8 @@ from flask import (
     url_for,
 )
 
+from werkzeug.exceptions import abort
+
 from sass.db import get_db, get_players, get_matches, get_tournament
 from sass.tournament import pair_round
 
@@ -130,8 +132,8 @@ def remove_player(tid, pid):
 @bp.route("/<int:tid>/admin/pair", methods=["GET", "POST"])
 def make_pairings(tid):
     t = get_tournament(tid)
-    pair_round(t["id"], t["current_rnd"])
-    return redirect(url_for("manager.pairings", tid=t["id"], rnd=t["current_rnd"]))
+    pair_round(t["id"], t["current_rnd"] + 1)
+    return redirect(url_for("manager.pairings", tid=t["id"], rnd=t["current_rnd"] + 1))
 
 
 @bp.route("/<int:tid>/<int:rnd>", methods=["GET", "POST"])
@@ -139,6 +141,8 @@ def pairings(tid, rnd):
     t = get_tournament(tid)
     plrs = get_players(tid)
     matches = get_matches(tid, rnd)
+    if len(matches) == 0:
+        abort(404, f"The tournament {t['title']} does not have a Round {rnd}")
     return render_template(
         "t_pairings.html",
         data={"t": t, "players": plrs, "matches": matches, "rnd": rnd},
