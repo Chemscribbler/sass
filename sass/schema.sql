@@ -31,6 +31,7 @@ CREATE TABLE player (
 
 CREATE TABLE match (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    match_num INTEGER,
     tid INTEGER NOT NULL,
     corp_id INTEGER NOT NULL,
     runner_id INTEGER NOT NULL,
@@ -49,4 +50,5 @@ VALUES (1, "Zsengrin", "Asa","MaxX"),
 (1, "2ndmxma","CtM","Val"),
 (1, "Goonkid","Outfit","Wu"),
 (1, "EuroPantsu","Asa","Freedom"),
-(1, "anotherLaura","Argus","419");
+(1, "anotherLaura","Argus","419"),
+(1, "KennySun","Asa","Hayley");

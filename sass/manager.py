@@ -12,9 +12,8 @@ from flask import (
     url_for,
 )
 
-from werkzeug.exceptions import abort
-
 from sass.db import get_db, get_players, get_matches, get_tournament
+from sass.tournament import pair_round
 
 bp = Blueprint("manager", __name__)
 
@@ -126,3 +125,60 @@ def remove_player(tid, pid):
     db.execute("DELETE FROM player WHERE id = ?", (pid,))
     db.commit()
     return redirect(url_for("manager.admin", tid=tid))
+
+
+@bp.route("/<int:tid>/admin/pair", methods=["GET", "POST"])
+def make_pairings(tid):
+    t = get_tournament(tid)
+    pair_round(t["id"], t["current_rnd"])
+    return redirect(url_for("manager.pairings", tid=t["id"], rnd=t["current_rnd"]))
+
+
+@bp.route("/<int:tid>/<int:rnd>", methods=["GET", "POST"])
+def pairings(tid, rnd):
+    t = get_tournament(tid)
+    plrs = get_players(tid)
+    matches = get_matches(tid, rnd)
+    return render_template(
+        "t_pairings.html",
+        data={"t": t, "players": plrs, "matches": matches, "rnd": rnd},
+    )
+
+
+@bp.route("/<int:tid>/<int:rnd>/admin", methods=["GET", "POST"])
+def admin_pairings(tid, rnd):
+    t = get_tournament(tid)
+    plrs = get_players(tid)
+    matches = get_matches(tid, rnd)
+    return render_template(
+        "t_admin_pairings.html", data={"t": t, "players": plrs, "matches": matches}
+    )
+
+
+@bp.route("/reporting/<int:mid>", methods=["POST", "GET"])
+def report_result(mid):
+    if request.form["result"] == "c_win":
+        c_score = 3
+        r_score = 0
+    elif request.form["result"] == "r_win":
+        c_score = 0
+        r_score = 3
+    else:
+        c_score = 1
+        r_score = 1
+    db = get_db()
+    db.execute(
+        """ UPDATE match SET corp_score = ?, runner_score = ?
+        WHERE id = ?
+
+        """,
+        (
+            c_score,
+            r_score,
+            mid,
+        ),
+    )
+    db.commit()
+    match = db.execute("SELECT * FROM match WHERE id = ?", (mid,)).fetchone()
+
+    return redirect(url_for("manager.pairings", tid=match["tid"], rnd=match["rnd"]))

@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block title %}
+{{data.t.title}}
+{% endblock %}
+
 {% block header %}
 <H1>{{data.t.title}}</H1>
 <h2>Round- {{data.t.current_rnd}}</h2>

@@ -4,6 +4,8 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 
+from werkzeug.exceptions import abort
+
 
 def get_db():
     if "db" not in g:
@@ -42,12 +44,36 @@ def init_app(app):
     app.cli.add_command(init_db_command)
 
 
+def get_tournament(tid):
+    t = get_db().execute("SELECT * FROM tournament WHERE id = ?", (tid,)).fetchone()
+
+    if t is None:
+        abort(404, f"Tournament id {tid} does not exist")
+
+    return t
+
+
+def get_player(pid):
+    return get_db().execute("SELECT * FROM player WHERE id = ?", (pid,)).fetchone()
+
+
 def get_players(tid):
     return (
         get_db()
         .execute(
             "SELECT * FROM player WHERE tid = ?"
             "ORDER BY score DESC, sos DESC, esos DESC",
+            (tid,),
+        )
+        .fetchall()
+    )
+
+
+def get_active_players(tid):
+    return (
+        get_db()
+        .execute(
+            "SELECT * FROM player WHERE tid = ? AND active = 1 ORDER BY score DESC, sos DESC, esos DESC",
             (tid,),
         )
         .fetchall()
@@ -62,13 +88,15 @@ def get_matches(tid, rnd):
     return (
         get_db()
         .execute(
-            "SELECT match.id, match.corp_id, corp_plr.p_name, match.runner_id, runner_plr.p_name"
-            "FROM match"
-            "WHERE match.id = ? AND match.rnd = ?"
-            "LEFT JOIN player corp_plr"
-            "ON match.corp_id = corp_plr.id"
-            "LEFT JOIN player runner_plr"
-            "ON match.runner_id = runner_plr.id",
+            """SELECT match.id, match.corp_id, match.runner_id, match.corp_score,
+            match.runner_score, match.match_num,
+            corp_plr.p_name as corp_player, runner_plr.p_name as runner_player
+            FROM match
+            LEFT JOIN player corp_plr
+            ON match.corp_id = corp_plr.id
+            LEFT JOIN player runner_plr
+            ON match.runner_id = runner_plr.id
+            WHERE match.tid = ? AND match.rnd = ?""",
             (
                 tid,
                 rnd,
@@ -76,12 +104,3 @@ def get_matches(tid, rnd):
         )
         .fetchall()
     )
-
-
-def get_tournament(tid):
-    t = get_db().execute("SELECT * FROM tournament WHERE id = ?", (tid,)).fetchone()
-
-    if t is None:
-        abort(404, f"Tournament id {tid} does not exist")
-
-    return t

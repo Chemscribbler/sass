@@ -44,9 +44,14 @@
     </tr>
     {% endfor %}
 </table>
-<div>
+<div class="p-1">
     <form action={{ url_for('manager.register', tid=data.t.id) }} method="GET">
         <button type="submit" class="btn btn-primary">Add Player</button>
+    </form>
+</div>
+<div class="p-1">
+    <form action={{ url_for('manager.make_pairings', tid=data.t.id )}} method="GET">
+        <button type="submit" class="btn btn-primary">Pair Round</button>
     </form>
 </div>
 
