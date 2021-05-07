@@ -23,10 +23,6 @@ def pair_round(tid, rnd):
                 i + 1,
             ),
         )
-    db.execute(
-        "UPDATE tournament SET current_rnd = ? WHERE id = ?",
-        (rnd, tid),
-    )
     db.commit()
     score_byes(tid, rnd)
 
@@ -74,6 +70,7 @@ def make_pairings(plrs):
 
 
 def get_side_tuple(p1, p2):
+    # TODO: FIX has played already
     """
     Returns the minimum weight edge between two players
     First it checks if either of them is the Bye (id <0) and if either player is eligible for the bye
@@ -165,7 +162,9 @@ def make_matches(pairings):
         )
     return [
         (pairings[i]["corp"], pairings[i]["runner"])
-        for i in sorted(pairings.keys(), key=lambda j: pairings[j]["score"])
+        for i in sorted(
+            pairings.keys(), key=lambda j: pairings[j]["score"], reverse=True
+        )
     ]
 
 
@@ -241,15 +240,17 @@ def update_scores(tid):
         SELECT id, name, SUM(coalesce(corp_points,0)) AS corp_points,
         SUM(coalesce(runner_points,0)) AS runner_points
         FROM(
-            SELECT p.id AS id, p.p_name AS name, m.corp_score AS corp_points, 0 AS runner_points
+            SELECT p.id AS id, p.p_name AS name, sum(m.corp_score) AS corp_points, 0 AS runner_points
             FROM player p
             INNER JOIN match m on p.id = m.corp_id
             WHERE p.tid = ?
+            group by p.id
             UNION
-            SELECT p.id AS id, p.p_name AS name, 0 AS corp_points, m.runner_score AS runner_points
+            SELECT p.id AS id, p.p_name AS name, 0 AS corp_points, sum(m.runner_score) AS runner_points
             FROM player p
             INNER JOIN match m on p.id = m.runner_id
             WHERE p.tid = ?
+            group by p.id
         )
         group by id
         """,
