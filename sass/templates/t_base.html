@@ -6,8 +6,6 @@
 
 {% block header %}
 <H1><a href={{url_for('manager.main', tid=data.t.id)}}>{{data.t.title}}</a></H1>
-<h2><a href={{url_for('manager.pairings', tid=data.t.id, rnd=data.t.current_rnd)}}>Round- {{data.t.current_rnd}}</a>
-</h2>
 <h3>
     Round Select -
     {% for rnd in data.rnd_list %}

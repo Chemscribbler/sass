@@ -35,8 +35,11 @@ def make_data_package(tid, rnd=None):
 
 
 @bp.route("/")
-def hello():
-    return "Hello, World!"
+def home():
+    tournaments = (
+        get_db().execute("SELECT * FROM tournament ORDER BY id DESC").fetchall()
+    )
+    return render_template("home.html", tournaments=tournaments)
 
 
 @bp.route("/create", methods=["GET", "POST"])
