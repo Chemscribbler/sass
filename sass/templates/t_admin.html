@@ -1,6 +1,15 @@
 {% extends "t_base.html" %}
 
+{% block header %}
+<h1>{{data.t.title}} - Round {{data.t.current_rnd}}</h1>
+{% endblock %}
+
 {% block content %}
+{% if data.t.current_rnd == 0 %}
+<form action={{ url_for('manager.start_tournament', tid=data.t.id, rnd=data.t.current_rnd) }} method="post">
+    <button name="start_t" , type="submit" , class="btn btn-primary">Start Tournament</button>
+</form>
+{% endif %}
 <table class="table table-striped">
     <thead>
         <tr>

@@ -15,7 +15,7 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from sass.db import get_db, get_players, get_matches, get_tournament
-from sass.tournament import pair_round
+from sass.tournament import pair_round, close_round, record_result
 
 bp = Blueprint("manager", __name__)
 
@@ -133,8 +133,8 @@ def remove_player(tid, pid):
 @bp.route("/<int:tid>/admin/pair", methods=["GET", "POST"])
 def make_pairings(tid):
     t = get_tournament(tid)
-    pair_round(t["id"], t["current_rnd"] + 1)
-    return redirect(url_for("manager.pairings", tid=t["id"], rnd=t["current_rnd"] + 1))
+    pair_round(t["id"], t["current_rnd"])
+    return redirect(url_for("manager.pairings", tid=t["id"], rnd=t["current_rnd"]))
 
 
 @bp.route("/<int:tid>/<int:rnd>", methods=["GET", "POST"])
@@ -172,19 +172,26 @@ def report_result(mid):
     else:
         c_score = 1
         r_score = 1
-    db = get_db()
-    db.execute(
-        """ UPDATE match SET corp_score = ?, runner_score = ?
-        WHERE id = ?
-
-        """,
-        (
-            c_score,
-            r_score,
-            mid,
-        ),
-    )
-    db.commit()
-    match = db.execute("SELECT * FROM match WHERE id = ?", (mid,)).fetchone()
-
+    record_result(mid, c_score, r_score)
+    match = get_db().execute("SELECT * FROM match WHERE id = ?", (mid,)).fetchone()
     return redirect(url_for("manager.pairings", tid=match["tid"], rnd=match["rnd"]))
+
+
+@bp.route("/<int:tid>/<int:rnd>/close", methods=["POST"])
+def finish_round(tid, rnd):
+    close_round(tid, rnd)
+    t = get_tournament(tid)
+    plrs = get_players(tid)
+    return redirect(url_for("manager.admin", tid=tid), code=303)
+
+
+@bp.route("/<int:tid>/admin/start", methods=["POST"])
+def start_tournament(tid):
+    t = get_tournament(tid)
+    if t["current_rnd"] != 0:
+        return redirect(url_for("manager.admin", tid=tid))
+    db = get_db()
+    db.execute("UPDATE tournament SET current_rnd = 1 WHERE id = ?", (tid,))
+    db.commit()
+    pair_round(tid, 1)
+    return redirect(url_for("manager.admin_pairings", tid=tid, rnd=1))

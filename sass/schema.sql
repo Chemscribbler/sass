@@ -23,8 +23,8 @@ CREATE TABLE player (
     sos REAL DEFAULT 0.0,
     esos REAL DEFAULT 0.0,
     bias INTEGER DEFAULT 0,
-    opponents TEXT,
-    recivied_bye INTEGER DEFAULT 0,
+    games_played INTEGER DEFAULT 0,
+    received_bye INTEGER DEFAULT 0,
     active INTEGER DEFAULT 1,
     FOREIGN KEY (tid) REFERENCES tournament (id)
 );

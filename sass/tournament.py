@@ -25,7 +25,7 @@ def pair_round(tid, rnd):
         )
     db.execute(
         "UPDATE tournament SET current_rnd = ? WHERE id = ?",
-        (rnd + 1, tid),
+        (rnd, tid),
     )
     db.commit()
     score_byes(tid, rnd)
@@ -37,7 +37,7 @@ def add_bye_player(tid, bye_number=1):
     """
     db = get_db()
     db.execute(
-        "INSERT INTO player (id, tid, name, score) VALUES (?, ?, 'Bye', -9)",
+        "INSERT INTO player (id, tid, p_name, score) VALUES (?, ?, 'Bye', -9)",
         (bye_number * -1, tid),
     )
     db.commit()
@@ -84,9 +84,9 @@ def get_side_tuple(p1, p2):
     If the costs are the same it flips a coin using random.random()
     """
     if p1["id"] < 0 or p2["id"] < 0:
-        if p1["recivied_bye"] or p2["recieved_bye"]:
-            return (None, None)
-        return (p1["id"], 0)
+        if p1["received_bye"] or p2["received_bye"]:
+            return (None, None, None)
+        return (p1["id"], p2["id"], 0)
 
     p1_corp_cost = calc_corp_cost(p1["bias"], p2["bias"])
     p2_corp_cost = calc_corp_cost(p2["bias"], p1["bias"])
@@ -94,7 +94,7 @@ def get_side_tuple(p1, p2):
     forced_corp = can_corp(p1, p2)
 
     if forced_corp is None:
-        return (None, None)
+        return (None, None, None)
     elif forced_corp == p1["id"]:
         return (p1["id"], p2["id"], p1_corp_cost)
     elif forced_corp == p2["id"]:
@@ -174,37 +174,11 @@ def close_round(tid, rnd):
     Go through
     """
     db = get_db()
-    matches = get_matches(tid, rnd)
-    for match in matches:
-        if match["corp_score"] is None or match["runner_score"] is None:
-            raise ValueError("Not all matches reported")
-        corp_player = get_player(match["corp_id"])
-        corp_opponents = loads(corp_player["opponents"])
-        runner_player = get_player(match["runner_id"])
-        runner_opponents = loads(runner_player["opponents"])
-
-        if runner_player["id"] in corp_opponents.keys():
-            corp_opponents[runner_player["id"]] = 0
-            runner_opponents[corp_player["id"]] = 0
-        else:
-            corp_opponents[runner_player["id"]] = 1
-            runner_opponents[corp_player["id"]] = -1
-
-        db.execute(
-            "UPDATE player" "SET opponents = ?" "WHERE id = ?",
-            (
-                corp_opponents,
-                corp_player["id"],
-            ),
-        )
-        db.execute(
-            "UPDATE player" "SET opponents = ?" "WHERE id = ?",
-            (
-                runner_opponents,
-                runner_player["id"],
-            ),
-        )
     db.execute("DELETE FROM player WHERE id < 0")
+    update_scores(tid)
+    update_bias(tid)
+    update_sos(tid)
+    update_esos(tid)
     db.execute(
         "UPDATE tournament SET current_rnd = ? WHERE id = ?",
         (
@@ -236,6 +210,9 @@ def score_byes(tid, rnd):
 
 def record_result(mid, corp_score, runner_score):
     db = get_db()
+    match = db.execute("SELECT * from match where id = ?", (mid,)).fetchone()
+    if match["corp_id"] < 0 or match["runner_id"] < 0:
+        return
     db.execute(
         "UPDATE match SET corp_score = ?, runner_score = ? WHERE id = ?",
         (
@@ -245,6 +222,7 @@ def record_result(mid, corp_score, runner_score):
         ),
     )
     db.commit()
+    return
 
 
 def get_matches(tid, rnd):
@@ -254,3 +232,171 @@ def get_matches(tid, rnd):
         WHERE tid = ? AND rnd = ?""",
         (tid, rnd),
     ).fetchall()
+
+
+def update_scores(tid):
+    db = get_db()
+    scores_table = db.execute(
+        """
+        SELECT id, name, SUM(coalesce(corp_points,0)) AS corp_points,
+        SUM(coalesce(runner_points,0)) AS runner_points
+        FROM(
+            SELECT p.id AS id, p.p_name AS name, m.corp_score AS corp_points, 0 AS runner_points
+            FROM player p
+            INNER JOIN match m on p.id = m.corp_id
+            WHERE p.tid = ?
+            UNION
+            SELECT p.id AS id, p.p_name AS name, 0 AS corp_points, m.runner_score AS runner_points
+            FROM player p
+            INNER JOIN match m on p.id = m.runner_id
+            WHERE p.tid = ?
+        )
+        group by id
+        """,
+        (
+            tid,
+            tid,
+        ),
+    ).fetchall()
+    for player in scores_table:
+        db.execute(
+            "UPDATE player SET score = ? WHERE id = ?",
+            (player["corp_points"] + player["runner_points"], player["id"]),
+        )
+    db.commit()
+    update_bias(tid)
+
+
+def count_games(pid):
+    p = get_player(pid)
+    return len(loads(p["opponents"]).keys())
+
+
+def get_opponents(pid):
+    pass
+
+
+def update_bias(tid):
+    db = get_db()
+    bias_table = db.execute(
+        """
+    SELECT id, name, sum(coalesce(corp_games,0)) AS corp_games,
+    sum(coalesce(runner_games,0)) AS runner_games
+        FROM(
+            SELECT p.id AS id, p.p_name AS name, count(m.corp_id) AS corp_games, 0 AS runner_games
+            FROM player p
+            INNER JOIN match m on p.id = m.corp_id
+            WHERE p.tid = ?
+            group by p.id
+            UNION
+            SELECT p.id AS id, p.p_name AS name, 0 AS corp_games, count(m.runner_id) AS runner_games
+            FROM player p
+            INNER JOIN match m on p.id = m.runner_id
+            WHERE p.tid = ?
+            group by p.id
+        )
+    group by id
+    """,
+        (
+            tid,
+            tid,
+        ),
+    ).fetchall()
+    for player in bias_table:
+        db.execute(
+            "UPDATE player SET bias = ?, games_played = ? WHERE id = ?",
+            (
+                player["corp_games"] - player["runner_games"],
+                player["corp_games"] + player["runner_games"],
+                player["id"],
+            ),
+        )
+    db.commit()
+
+
+def update_sos(tid):
+    db = get_db()
+    sos_table = db.execute(
+        """
+        SELECT id, name, sum(coalesce(opp_score,0)) as total_opp_score,
+        sum(coalesce(opp_games_played, 0)) as total_opp_games_played
+        FROM (
+            SELECT p.id as id, p.name as name, o.score as opp_score, o.games_played as opp_games_played
+            FROM (
+                SELECT p.id as id, p.p_name as name, m.corp_id as opp_id
+                FROM player p
+                INNER JOIN match m on p.id = m.runner_id
+                where p.tid = ?
+            ) as p
+            INNER JOIN player o on p.opp_id = o.id
+            group by p.id
+            UNION
+            SELECT p.id as id, p.name as name, o.score as opp_score, o.games_played as opp_games_played
+            FROM (
+                SELECT p.id as id, p.p_name as name, m.runner_id as opp_id
+                FROM player p
+                INNER JOIN match m on p.id = m.corp_id
+                WHERE p.tid = ?
+            ) as p
+            INNER JOIN player o on p.opp_id = o.id
+            group by p.id
+        ) group by id
+        """,
+        (
+            tid,
+            tid,
+        ),
+    ).fetchall()
+    for player in sos_table:
+        db.execute(
+            "UPDATE player SET sos = ? WHERE id = ?",
+            (
+                player["total_opp_score"] / max(player["total_opp_games_played"], 1),
+                player["id"],
+            ),
+        )
+    db.commit()
+
+
+def update_esos(tid):
+    db = get_db()
+    sos_table = db.execute(
+        """
+        SELECT id, name, sum(coalesce(opp_sos,0)) as total_opp_sos,
+        sum(coalesce(opp_games_played, 0)) as total_opp_games_played
+        FROM (
+            SELECT p.id as id, p.name as name, o.sos as opp_sos, o.games_played as opp_games_played
+            FROM (
+                SELECT p.id as id, p.p_name as name, m.corp_id as opp_id
+                FROM player p
+                INNER JOIN match m on p.id = m.runner_id
+                where p.tid = ?
+            ) as p
+            INNER JOIN player o on p.opp_id = o.id
+            group by p.id
+            UNION
+            SELECT p.id as id, p.name as name, o.sos as opp_sos, o.games_played as opp_games_played
+            FROM (
+                SELECT p.id as id, p.p_name as name, m.runner_id as opp_id
+                FROM player p
+                INNER JOIN match m on p.id = m.corp_id
+                WHERE p.tid = ?
+            ) as p
+            INNER JOIN player o on p.opp_id = o.id
+            group by p.id
+        ) group by id
+        """,
+        (
+            tid,
+            tid,
+        ),
+    ).fetchall()
+    for player in sos_table:
+        db.execute(
+            "UPDATE player SET esos = ? WHERE id = ?",
+            (
+                player["total_opp_sos"] / max(player["total_opp_games_played"], 1),
+                player["id"],
+            ),
+        )
+    db.commit()
