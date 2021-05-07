@@ -71,6 +71,7 @@ def make_pairings(plrs):
 
 def get_side_tuple(p1, p2):
     # TODO: FIX has played already
+    # Look for match table with p1 & p2 id
     """
     Returns the minimum weight edge between two players
     First it checks if either of them is the Bye (id <0) and if either player is eligible for the bye
@@ -137,6 +138,26 @@ def can_corp(p1, p2):
     Otherwise if they total side balance is 0 (they've played both) return None
     Otherwise return the ID of the player who has to Corp
     """
+    db = get_db()
+    p1_corped_query = db.execute(
+        "SELECT * from match where corp_id = ? AND runner_id = ?", (p1["id"], p2["id"])
+    ).fetchone()
+    p2_corped_query = db.execute(
+        "SELECT * from match where corp_id = ? AND runner_id = ?", (p2["id"], p1["id"])
+    ).fetchone()
+
+    if p1_corped_query is None and p2_corped_query is None:
+        return 0
+    elif p1_corped_query is None:
+        print(f"Only {p1['p_name']} can corp")
+        return p1["id"]
+    elif p2_corped_query is None:
+        print(f"Only {p2['p_name']} can corp")
+        return p2["id"]
+    else:
+        print(f"{p1['p_name']} and {p2['p_name']} cannot play")
+        return None
+
     try:
         p1_opp = loads(p1["opponents"])
     except:
