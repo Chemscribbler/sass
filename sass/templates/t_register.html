@@ -10,7 +10,7 @@
         <label for="corp_id">Corp ID</label>
         <select class="form-select" name="corp_id">
             <option selected>-</option>
-            {% for corp_id in data.ids.corps %}
+            {% for corp_id in ids.corps %}
             <option>{{corp_id}}</option>
             {% endfor %}
         </select>
@@ -19,7 +19,7 @@
         <label for="runner_id">Corp ID</label>
         <select class="form-select" name="runner_id">
             <option selected>-</option>
-            {% for runner_id in data.ids.runners %}
+            {% for runner_id in ids.runners %}
             <option>{{runner_id}}</option>
             {% endfor %}
         </select>

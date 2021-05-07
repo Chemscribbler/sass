@@ -199,13 +199,15 @@ def close_round(tid, rnd):
     update_bias(tid)
     update_sos(tid)
     update_esos(tid)
-    db.execute(
-        "UPDATE tournament SET current_rnd = ? WHERE id = ?",
-        (
-            rnd + 1,
-            tid,
-        ),
-    )
+    t = get_tournament(tid)
+    if rnd == t["current_rnd"]:
+        db.execute(
+            "UPDATE tournament SET current_rnd = ? WHERE id = ?",
+            (
+                rnd + 1,
+                tid,
+            ),
+        )
     db.commit()
 
 
@@ -245,15 +247,6 @@ def record_result(mid, corp_score, runner_score):
     return
 
 
-def get_matches(tid, rnd):
-    db = get_db()
-    return db.execute(
-        """SELECT * from match
-        WHERE tid = ? AND rnd = ?""",
-        (tid, rnd),
-    ).fetchall()
-
-
 def update_scores(tid):
     db = get_db()
     scores_table = db.execute(
@@ -287,15 +280,6 @@ def update_scores(tid):
         )
     db.commit()
     update_bias(tid)
-
-
-def count_games(pid):
-    p = get_player(pid)
-    return len(loads(p["opponents"]).keys())
-
-
-def get_opponents(pid):
-    pass
 
 
 def update_bias(tid):

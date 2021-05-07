@@ -104,3 +104,16 @@ def get_matches(tid, rnd):
         )
         .fetchall()
     )
+
+
+def get_rnd_list(tid):
+    return (
+        get_db()
+        .execute(
+            """
+            SELECT DISTINCT(rnd) as rnds FROM match WHERE tid=?
+            """,
+            (tid,),
+        )
+        .fetchall()
+    )

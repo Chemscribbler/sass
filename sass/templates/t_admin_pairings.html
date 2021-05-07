@@ -1,11 +1,8 @@
 {% extends "t_base.html" %}
 
-{% block header %}
-<h1>{{data.t.title}} - Round {{data.t.current_rnd}}</h1>
-{% endblock %}
 
 {% block content %}
-<form action={{ url_for('manager.finish_round', tid=data.t.id, rnd=data.t.current_rnd) }} method="post">
+<form action={{ url_for('manager.finish_round', tid=data.t.id, rnd=data.rnd) }} method="post">
     <button name="close_round" , type="submit" , class="btn btn-primary">Close Round</button>
 </form>
 
