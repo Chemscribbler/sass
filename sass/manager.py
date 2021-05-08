@@ -14,7 +14,14 @@ from flask import (
 
 from werkzeug.exceptions import abort
 
-from sass.db import get_db, get_players, get_matches, get_tournament, get_rnd_list
+from sass.db import (
+    get_db,
+    get_players,
+    get_matches,
+    get_tournament,
+    get_rnd_list,
+    get_json,
+)
 from sass.tournament import pair_round, close_round, record_result, get_ids
 
 bp = Blueprint("manager", __name__)
@@ -205,3 +212,8 @@ def start_tournament(tid):
     db.commit()
     pair_round(tid, 1)
     return redirect(url_for("manager.admin_pairings", tid=tid, rnd=1))
+
+
+@bp.route("/<int:tid>.json", methods=["GET"])
+def report_json(tid):
+    return get_json(tid)

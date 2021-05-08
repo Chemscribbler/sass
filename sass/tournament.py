@@ -72,8 +72,6 @@ def make_pairings(plrs):
 
 
 def get_side_tuple(p1, p2):
-    # TODO: FIX has played already
-    # Look for match table with p1 & p2 id
     """
     Returns the minimum weight edge between two players
     First it checks if either of them is the Bye (id <0) and if either player is eligible for the bye
@@ -179,6 +177,7 @@ def close_round(tid, rnd):
     Go through
     """
     db = get_db()
+    update_byes_recieved(tid)
     db.execute("DELETE FROM player WHERE id < 0")
     update_scores(tid)
     update_bias(tid)
@@ -229,7 +228,6 @@ def record_result(mid, corp_score, runner_score):
         ),
     )
     db.commit()
-    return
 
 
 def update_scores(tid):
@@ -277,13 +275,13 @@ def update_bias(tid):
             SELECT p.id AS id, p.p_name AS name, count(m.corp_id) AS corp_games, 0 AS runner_games
             FROM player p
             INNER JOIN match m on p.id = m.corp_id
-            WHERE p.tid = ?
+            WHERE p.tid = ? AND m.runner_id > 0
             group by p.id
             UNION
             SELECT p.id AS id, p.p_name AS name, 0 AS corp_games, count(m.runner_id) AS runner_games
             FROM player p
             INNER JOIN match m on p.id = m.runner_id
-            WHERE p.tid = ?
+            WHERE p.tid = ? AND m.corp_id > 0
             group by p.id
         )
     group by id
@@ -419,3 +417,31 @@ def get_ids():
         with open("ids.json", "r") as f:
             ids = load(f)
     return ids
+
+
+def update_byes_recieved(tid):
+    db = get_db()
+    byes = db.execute(
+        """
+        SELECT p.id
+        FROM player p
+        INNER JOIN match m
+        WHERE p.id = m.corp_id AND m.runner_id < 0 AND p.tid = ?
+        """,
+        (tid,),
+    ).fetchall()
+    for i in byes:
+        print(i)
+        db.execute("UPDATE player SET received_bye = 1 WHERE id = ?", (i["id"],))
+    byes = db.execute(
+        """
+        SELECT p.id
+        FROM player p
+        INNER JOIN match m
+        WHERE p.id = m.corp_id AND m.runner_id < 0 AND p.tid = ?
+        """,
+        (tid,),
+    ).fetchall()
+    for i in byes:
+        db.execute("UPDATE player SET received_bye = 1 WHERE id = ?", (i["id"],))
+    db.commit()

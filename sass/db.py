@@ -117,3 +117,63 @@ def get_rnd_list(tid):
         )
         .fetchall()
     )
+
+
+def get_last_rnd(tid):
+    q = (
+        get_db()
+        .execute("SELECT MAX(rnd) as rnd FROM match WHERE tid=?", (tid,))
+        .fetchone()
+    )
+    return q["rnd"]
+
+
+def get_json(tid):
+    t = get_tournament(tid)
+    p = get_players(tid)
+    t_json = {
+        "name": t["title"],
+        "date": t["t_date"],
+        "cutToTop": 0,
+        "preliminaryRounds": get_last_rnd(tid),
+        "players": [],
+        "rounds": [],
+        "uploadedFrom": "AesopsTables",
+        "links": [
+            {
+                "rel": "schemaderivedfrom",
+                "href": "http://steffens.org/nrtm/nrtm-schema.json",
+            },
+            {"rel": "uploadedfrom", "href": "https://github.com/Chemscribbler/sass"},
+        ],
+    }
+    for i, player in enumerate(p):
+        t_json["players"].append(
+            {
+                "id": player["id"],
+                "name": player["p_name"],
+                "rank": i + 1,
+                "corpIdentity": player["corp_id"],
+                "runnerIdentity": player["runner_id"],
+                "matchPoints": player["score"],
+                "strengthOfSchedule": player["sos"],
+                "extendedStrengthOfSchedule": player["esos"],
+                "sideBalance": player["bias"],
+            }
+        )
+    for i in range(get_last_rnd(tid)):
+        matches = []
+        for match in get_matches(tid, i + 1):
+            matches.append(
+                {
+                    "table": match["match_num"],
+                    "corp": {"id": match["corp_id"], "score": match["corp_score"]},
+                    "runner": {
+                        "id": match["runner_id"],
+                        "score": match["runner_score"],
+                    },
+                }
+            )
+        t_json["rounds"].append(matches)
+
+    return t_json
