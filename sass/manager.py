@@ -141,7 +141,9 @@ def admin(tid):
 
 
 @bp.route("/<int:tid>/<int:rnd>/admin", methods=["GET", "POST"])
-def admin_pairings(tid, rnd):
+def admin_pairings(tid, rnd, error=None):
+    if error is not None:
+        flash(error)
     return render_template(
         "t_admin_pairings.html",
         data=make_data_package(tid, rnd=rnd),
@@ -198,8 +200,17 @@ def report_result(mid):
 
 @bp.route("/<int:tid>/<int:rnd>/close", methods=["POST"])
 def finish_round(tid, rnd):
-    close_round(tid, rnd)
-    return redirect(url_for("manager.admin", tid=tid), code=303)
+    if close_round(tid, rnd):
+        return redirect(url_for("manager.admin", tid=tid), code=303)
+    else:
+        flash("Not all results reported")
+        return redirect(
+            url_for(
+                "manager.admin_pairings",
+                tid=tid,
+                rnd=rnd,
+            ),
+        )
 
 
 @bp.route("/<int:tid>/admin/start", methods=["POST"])

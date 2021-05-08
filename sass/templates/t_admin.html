@@ -42,9 +42,11 @@
                 <button type="submit" class="btn btn-success">▲</button>
             </form>
             {% endif %}
+            {% if data.t.current_rnd == 0 %}
             <form action={{ url_for('manager.remove_player' , tid=plr.tid, pid=plr.id) }} method="post">
                 <button type="submit" class="btn btn-danger">🗑</button>
             </form>
+            {% endif %}
         </td>
     </tr>
     {% endfor %}

@@ -174,9 +174,11 @@ def make_matches(pairings):
 
 def close_round(tid, rnd):
     """
-    Go through
+    Check to see if all matches report
     """
     db = get_db()
+    if not all_reported(tid, rnd):
+        return False
     update_byes_recieved(tid)
     db.execute("DELETE FROM player WHERE id < 0")
     update_scores(tid)
@@ -193,6 +195,7 @@ def close_round(tid, rnd):
             ),
         )
     db.commit()
+    return True
 
 
 def score_byes(tid, rnd):
@@ -445,3 +448,18 @@ def update_byes_recieved(tid):
     for i in byes:
         db.execute("UPDATE player SET received_bye = 1 WHERE id = ?", (i["id"],))
     db.commit()
+
+
+def all_reported(tid, rnd):
+    q = (
+        get_db()
+        .execute(
+            "SELECT * FROM match WHERE tid = ? AND rnd = ? AND corp_score IS NULL",
+            (
+                tid,
+                rnd,
+            ),
+        )
+        .fetchone()
+    )
+    return q is None
