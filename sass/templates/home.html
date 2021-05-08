@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block header %}
+<h1>SASS</h1>
+{% endblock %}
+
+{% block content %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Tournaments</th>
+        </tr>
+    </thead>
+    {% for tournament in tournaments %}
+    <tr>
+        <td><a href={{ url_for('manager.main', tid=tournament.id)}}>{{tournament.title}}</a></td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

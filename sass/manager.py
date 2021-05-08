@@ -15,7 +15,7 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from sass.db import get_db, get_players, get_matches, get_tournament, get_rnd_list
-from sass.tournament import pair_round, close_round, record_result
+from sass.tournament import pair_round, close_round, record_result, get_ids
 
 bp = Blueprint("manager", __name__)
 
@@ -101,14 +101,18 @@ def register(tid):
             (name, tid, corp_id, runner_id),
         )
         db.commit()
-
-    corp_ids = ["HB", "Jinteki", "Weyland", "NBN"]
-    runner_ids = ["Kate", "Noise", "Gabe"]
+    ids = get_ids()
+    corp_ids = {card["name"]: card["faction"] for card in ids if card["side"] == "corp"}
+    runner_ids = {
+        card["name"]: card["faction"] for card in ids if card["side"] == "runner"
+    }
+    corp_order = sorted(corp_ids)
+    runner_order = sorted(runner_ids)
 
     return render_template(
         "t_register.html",
         data=make_data_package(tid),
-        ids={"corps": corp_ids, "runners": runner_ids},
+        ids={"corps": corp_order, "runners": runner_order},
     )
 
 

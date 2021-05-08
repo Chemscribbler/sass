@@ -2,7 +2,9 @@ from sass.db import get_db, get_tournament, get_active_players, get_player
 from networkx import Graph, max_weight_matching
 from itertools import combinations
 from random import random
-from json import loads, dumps
+from json import load, dump
+import requests
+import os.path
 
 
 def pair_round(tid, rnd):
@@ -157,23 +159,6 @@ def can_corp(p1, p2):
     else:
         print(f"{p1['p_name']} and {p2['p_name']} cannot play")
         return None
-
-    try:
-        p1_opp = loads(p1["opponents"])
-    except:
-        p1_opp = {}
-    if str(p2["id"]) not in p1_opp.keys():
-        return 0
-    else:
-        played_sides = p1_opp[str(p2["id"])]
-        if played_sides == 0:
-            # If p1 and p2 have played both sides, return none
-            return None
-        elif played_sides == -1:
-            # If p1 ran against p2, they can corp
-            return p1["id"]
-        else:
-            return p2["id"]
 
 
 def make_matches(pairings):
@@ -357,7 +342,11 @@ def update_sos(tid):
         db.execute(
             "UPDATE player SET sos = ? WHERE id = ?",
             (
-                player["total_opp_score"] / max(player["total_opp_games_played"], 1),
+                round(
+                    player["total_opp_score"]
+                    / max(player["total_opp_games_played"], 1),
+                    3,
+                ),
                 player["id"],
             ),
         )
@@ -401,8 +390,32 @@ def update_esos(tid):
         db.execute(
             "UPDATE player SET esos = ? WHERE id = ?",
             (
-                player["total_opp_sos"] / max(player["total_opp_games_played"], 1),
+                round(
+                    player["total_opp_sos"] / max(player["total_opp_games_played"], 1),
+                    4,
+                ),
                 player["id"],
             ),
         )
     db.commit()
+
+
+def get_ids():
+    if not os.path.exists("ids.json"):
+        all_cards = requests.get("https://netrunnerdb.com/api/2.0/public/cards")
+        ids = [
+            {
+                "side": card["side_code"],
+                "faction": card["faction_code"],
+                "name": card["title"],
+            }
+            for card in all_cards.json()["data"]
+            if card["type_code"] == "identity"
+        ]
+        with open("ids.json", "w") as f:
+            dump(ids, f)
+    else:
+        ids = []
+        with open("ids.json", "r") as f:
+            ids = load(f)
+    return ids
