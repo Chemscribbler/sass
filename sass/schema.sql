@@ -43,12 +43,4 @@ CREATE TABLE match (
     FOREIGN KEY (runner_id) REFERENCES player (id)
 );
 
-INSERT INTO tournament (title) VALUES ("Earliest Test");
-
-INSERT INTO player (tid, p_name, corp_id, runner_id)
-VALUES (1, "Zsengrin", "Asa","MaxX"),
-(1, "2ndmxma","CtM","Val"),
-(1, "Goonkid","Outfit","Wu"),
-(1, "EuroPantsu","Asa","Freedom"),
-(1, "anotherLaura","Argus","419"),
-(1, "KennySun","Asa","Hayley");
+INSERT INTO tournament (title) VALUES ("Placeholder")
