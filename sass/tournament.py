@@ -5,6 +5,7 @@ from random import random
 from json import load, dump
 import requests
 import os.path
+from sass.exceptions import PairingException
 
 
 def pair_round(tid, rnd):
@@ -178,7 +179,7 @@ def close_round(tid, rnd):
     """
     db = get_db()
     if not all_reported(tid, rnd):
-        return False
+        raise PairingException("Not all matches have reported result")
     update_byes_recieved(tid)
     db.execute("DELETE FROM player WHERE id < 0")
     update_scores(tid)

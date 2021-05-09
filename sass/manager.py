@@ -22,7 +22,15 @@ from sass.db import (
     get_rnd_list,
     get_json,
 )
-from sass.tournament import pair_round, close_round, record_result, get_ids
+from sass.tournament import (
+    pair_round,
+    close_round,
+    record_result,
+    get_ids,
+    all_reported,
+)
+
+from sass.exceptions import AdminException, PairingException
 
 bp = Blueprint("manager", __name__)
 
@@ -141,9 +149,7 @@ def admin(tid):
 
 
 @bp.route("/<int:tid>/<int:rnd>/admin", methods=["GET", "POST"])
-def admin_pairings(tid, rnd, error=None):
-    if error is not None:
-        flash(error)
+def admin_pairings(tid, rnd):
     return render_template(
         "t_admin_pairings.html",
         data=make_data_package(tid, rnd=rnd),
@@ -178,6 +184,16 @@ def remove_player(tid, pid):
 @bp.route("/<int:tid>/admin/pair", methods=["GET", "POST"])
 def make_pairings(tid):
     t = get_tournament(tid)
+    if not all_reported(tid, t["current_rnd"] - 1):
+        flash("Previous round not complete")
+        return redirect(
+            url_for("manager.admin_pairings", tid=tid, rnd=t["current_rnd"] - 1)
+        )
+    if not all_reported(tid, t["current_rnd"]):
+        flash("Pairing for this round already exists")
+        return redirect(
+            url_for("manager.admin_pairings", tid=tid, rnd=t["current_rnd"])
+        )
     pair_round(t["id"], t["current_rnd"])
     return redirect(url_for("manager.pairings", tid=t["id"], rnd=t["current_rnd"]))
 
@@ -200,10 +216,12 @@ def report_result(mid):
 
 @bp.route("/<int:tid>/<int:rnd>/close", methods=["POST"])
 def finish_round(tid, rnd):
-    if close_round(tid, rnd):
+    try:
+        close_round(tid, rnd)
         return redirect(url_for("manager.admin", tid=tid), code=303)
-    else:
-        flash("Not all results reported")
+    except PairingException as e:
+        print(e)
+        flash("Not all matches have results")
         return redirect(
             url_for(
                 "manager.admin_pairings",
@@ -228,3 +246,8 @@ def start_tournament(tid):
 @bp.route("/<int:tid>.json", methods=["GET"])
 def report_json(tid):
     return get_json(tid)
+
+
+@bp.route("/<int:tid>/<int:rnd>/delete", methods=["POST"])
+def delete_rnd(tid, rnd):
+    pass
