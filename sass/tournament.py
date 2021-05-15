@@ -36,7 +36,7 @@ def add_bye_player(tid, bye_number=1):
     """
     db = get_db()
     db.execute(
-        "INSERT INTO player (id, tid, p_name, score) VALUES (?, ?, 'Bye', -9)",
+        "INSERT INTO player (id, tid, p_name, is_bye, score) VALUES (?, ?, 'Bye', 1, -9)",
         (bye_number * -1, tid),
     )
     db.commit()
@@ -427,7 +427,7 @@ def update_byes_recieved(tid):
     db = get_db()
     byes = db.execute(
         """
-        SELECT p.id, 
+        SELECT p.id 
         FROM player p
         INNER JOIN match m
         ON p.id = m.corp_id
@@ -442,7 +442,7 @@ def update_byes_recieved(tid):
         db.execute("UPDATE player SET received_bye = 1 WHERE id = ?", (i["id"],))
     byes = db.execute(
         """
-        SELECT p.id, 
+        SELECT p.id 
         FROM player p
         INNER JOIN match m
         ON p.id = m.runner_id

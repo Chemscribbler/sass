@@ -202,6 +202,7 @@ def delete_pairings(tid, rnd):
             rnd,
         ),
     )
+    db.execute("DELETE FROM player WHERE is_bye = 1 AND tid = ?", (tid,))
     db.commit()
 
 

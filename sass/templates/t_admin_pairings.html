@@ -35,10 +35,9 @@
         </th>
     </tr>
     {% endfor %}
-    <!-- Add delete matches to allow for re-pairings -->
 </table>
 
-<form action={{ url_for('manager.undo_pairings', tid=data.t.id, rnd=data.rnd) }} method="put">
-    <button name="close_round" , type="submit" , class="btn btn-warning">Undo Pairings</button>
+<form action={{ url_for('manager.undo_pairings', tid=data.t.id, rnd=data.rnd) }} method="post">
+    <button name="undo_pairings" , type="submit" , class="btn btn-warning">Undo Pairings</button>
 </form>
 {% endblock %}
