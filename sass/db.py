@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 import click
@@ -26,7 +27,6 @@ def close_db(e=None):
 
 def init_db():
     db = get_db()
-    click.echo("loaded db")
     with current_app.open_resource("schema.sql") as f:
         db.executescript(f.read().decode("utf8"))
 
@@ -44,6 +44,10 @@ def init_app(app):
     app.cli.add_command(init_db_command)
 
 
+def get_tournaments():
+    return get_db().execute("SELECT * FROM tournament ORDER BY id DESC").fetchall()
+
+
 def get_tournament(tid):
     t = get_db().execute("SELECT * FROM tournament WHERE id = ?", (tid,)).fetchone()
 
@@ -51,6 +55,39 @@ def get_tournament(tid):
         abort(404, f"Tournament id {tid} does not exist")
 
     return t
+
+
+def create_tournament(title, date=datetime.date.today()):
+    db = get_db()
+    db.execute(
+        "INSERT INTO tournament (title, date) VALUES (?, ?)",
+        (
+            title,
+            date,
+        ),
+    )
+    db.commit()
+    tournaments = db.execute(
+        "SELECT * FROM tournament WHERE title = ? AND date = ?",
+        (
+            title,
+            date,
+        ),
+    ).fetchall()
+    selector = 0
+    for t in tournaments:
+        selector = t["id"]
+    return selector
+
+
+def add_player(tid, name, corp_id, runner_id):
+    db = get_db()
+    db.execute(
+        "INSERT INTO player (p_name, tid, corp_id, runner_id)" "VALUES (?, ?, ?, ?)",
+        (name, tid, corp_id, runner_id),
+    )
+    db.commit()
+    return name
 
 
 def get_player(pid):
@@ -80,6 +117,24 @@ def get_active_players(tid):
     )
 
 
+def drop_player(pid):
+    db = get_db()
+    db.execute("UPDATE player SET active = 0 WHERE id = ?", (pid,))
+    db.commit()
+
+
+def undrop_player(pid):
+    db = get_db()
+    db.execute("UPDATE player SET active = 1 WHERE id = ?", (pid,))
+    db.commit()
+
+
+def remove_player(pid):
+    db = get_db()
+    db.execute("DELETE FROM player WHERE id = ?", (pid,))
+    db.commit()
+
+
 def get_matches(tid, rnd):
     """
     tid: Tournament ID
@@ -106,6 +161,10 @@ def get_matches(tid, rnd):
     )
 
 
+def get_match(mid):
+    return get_db().execute("SELECT * FROM match WHERE id = ?", (mid,)).fetchone()
+
+
 def get_rnd_list(tid):
     return (
         get_db()
@@ -126,6 +185,24 @@ def get_last_rnd(tid):
         .fetchone()
     )
     return q["rnd"]
+
+
+def rnd_one_start(tid):
+    db = get_db()
+    db.execute("UPDATE tournament SET current_rnd = 1 WHERE id = ?", (tid,))
+    db.commit()
+
+
+def delete_pairings(tid, rnd):
+    db = get_db()
+    db.execute(
+        "DELETE FROM match WHERE tid=? AND rnd = ?",
+        (
+            tid,
+            rnd,
+        ),
+    )
+    db.commit()
 
 
 def get_json(tid):

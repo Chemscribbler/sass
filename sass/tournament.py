@@ -75,14 +75,14 @@ def make_pairings(plrs):
 def get_side_tuple(p1, p2):
     """
     Returns the minimum weight edge between two players
-    First it checks if either of them is the Bye (id <0) and if either player is eligible for the bye
+    First it checks if either of them is the Bye and if either player is eligible for the bye
     Then calculates the cost of both players corping.
     Then it checks to see if the players have some forced matchup (because they've alreayd played)
     If there is a forced matchup it returns that value.
     Otherwise it takes the lower of two costs
     If the costs are the same it flips a coin using random.random()
     """
-    if p1["id"] < 0 or p2["id"] < 0:
+    if p1["is_bye"] or p2["is_bye"]:
         if p1["received_bye"] or p2["received_bye"]:
             return (None, None, None)
         return (p1["id"], p2["id"], 0)
@@ -181,7 +181,7 @@ def close_round(tid, rnd):
     if not all_reported(tid, rnd):
         raise PairingException("Not all matches have reported result")
     update_byes_recieved(tid)
-    db.execute("DELETE FROM player WHERE id < 0")
+    db.execute("DELETE FROM player WHERE is_bye = 1 AND tid = ?", (tid,))
     update_scores(tid)
     update_bias(tid)
     update_sos(tid)
@@ -427,10 +427,13 @@ def update_byes_recieved(tid):
     db = get_db()
     byes = db.execute(
         """
-        SELECT p.id
+        SELECT p.id, 
         FROM player p
         INNER JOIN match m
-        WHERE p.id = m.corp_id AND m.runner_id < 0 AND p.tid = ?
+        ON p.id = m.corp_id
+        INNER JOIN player o
+        ON o.id = m.runner_id
+        WHERE o.is_bye = 1 AND p.tid = ?
         """,
         (tid,),
     ).fetchall()
@@ -439,10 +442,13 @@ def update_byes_recieved(tid):
         db.execute("UPDATE player SET received_bye = 1 WHERE id = ?", (i["id"],))
     byes = db.execute(
         """
-        SELECT p.id
+        SELECT p.id, 
         FROM player p
         INNER JOIN match m
-        WHERE p.id = m.corp_id AND m.runner_id < 0 AND p.tid = ?
+        ON p.id = m.runner_id
+        INNER JOIN player o
+        ON o.id = m.corp_id
+        WHERE o.is_bye = 1 AND p.tid = ?
         """,
         (tid,),
     ).fetchall()

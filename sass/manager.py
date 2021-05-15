@@ -15,12 +15,20 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from sass.db import (
+    add_player,
+    create_tournament,
+    delete_pairings,
     get_db,
+    get_match,
     get_players,
     get_matches,
     get_tournament,
     get_rnd_list,
     get_json,
+    get_tournaments,
+    drop_player,
+    rnd_one_start,
+    undrop_player,
 )
 from sass.tournament import (
     pair_round,
@@ -51,10 +59,7 @@ def make_data_package(tid, rnd=None):
 
 @bp.route("/")
 def home():
-    tournaments = (
-        get_db().execute("SELECT * FROM tournament ORDER BY id DESC").fetchall()
-    )
-    return render_template("home.html", tournaments=tournaments)
+    return render_template("home.html", tournaments=get_tournaments())
 
 
 @bp.route("/create", methods=["GET", "POST"])
@@ -62,33 +67,15 @@ def create():
     if request.method == "POST":
         t_name = request.form["title"]
         t_date = request.form["date"]
-        if t_date is None:
-            t_date = date.today().strftime("%Y-%m-%d")
-        db = get_db()
-        error = None
+        if len(t_date) < 2:
+            t_date = None
 
+        error = None
         if t_name is None:
             error = "No tournament name"
 
         if error is None:
-            db.execute(
-                "INSERT INTO tournament (title, t_date) VALUES (?, ?)",
-                (
-                    t_name,
-                    t_date,
-                ),
-            )
-            db.commit()
-            tournaments = db.execute(
-                "SELECT * FROM tournament WHERE title = ? AND t_date = ?",
-                (
-                    t_name,
-                    t_date,
-                ),
-            ).fetchall()
-            selector = 0
-            for t in tournaments:
-                selector = t["id"]
+            selector = create_tournament(title=t_name, date=t_date)
             return redirect(url_for("manager.main", tid=selector))
 
         flash(error)
@@ -108,14 +95,9 @@ def register(tid):
         name = request.form["name"]
         corp_id = request.form["corp_id"]
         runner_id = request.form["runner_id"]
+        add_player(tid, name, corp_id, runner_id)
+        flash(f"{name} added to tournament")
 
-        db = get_db()
-        db.execute(
-            "INSERT INTO player (p_name, tid, corp_id, runner_id)"
-            "VALUES (?, ?, ?, ?)",
-            (name, tid, corp_id, runner_id),
-        )
-        db.commit()
     ids = get_ids()
     corp_ids = {card["name"]: card["faction"] for card in ids if card["side"] == "corp"}
     runner_ids = {
@@ -158,26 +140,19 @@ def admin_pairings(tid, rnd):
 
 @bp.route("/<int:tid>/admin/<int:pid>/drop", methods=["GET", "PUT"])
 def drop_player(tid, pid):
-    db = get_db()
-    db.execute("UPDATE player SET active = 0 WHERE id = ?", (pid,))
-    db.commit()
+    drop_player(pid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
 
 
 @bp.route("/<int:tid>/admin/<int:pid>/undrop", methods=["GET", "PUT"])
 def undrop_player(tid, pid):
-    db = get_db()
-    db.execute("UPDATE player SET active = 1 WHERE id = ?", (pid,))
-    db.commit()
+    undrop_player(pid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
 
 
 @bp.route("/<int:tid>/admin/<int:pid>/remove", methods=["POST"])
 def remove_player(tid, pid):
-    print(pid)
-    db = get_db()
-    db.execute("DELETE FROM player WHERE id = ?", (pid,))
-    db.commit()
+    remove_player
     return redirect(url_for("manager.admin", tid=tid))
 
 
@@ -210,7 +185,7 @@ def report_result(mid):
         c_score = 1
         r_score = 1
     record_result(mid, c_score, r_score)
-    match = get_db().execute("SELECT * FROM match WHERE id = ?", (mid,)).fetchone()
+    match = get_match(mid)
     return redirect(url_for("manager.pairings", tid=match["tid"], rnd=match["rnd"]))
 
 
@@ -231,14 +206,18 @@ def finish_round(tid, rnd):
         )
 
 
+@bp.route("<int:tid>/<int:rnd>/delete", methods=["PUT"])
+def undo_pairings(tid, rnd):
+    delete_pairings(tid, rnd)
+    return redirect(url_for("manager.admin_pairings", tid=tid, rnd=rnd))
+
+
 @bp.route("/<int:tid>/admin/start", methods=["POST"])
 def start_tournament(tid):
     t = get_tournament(tid)
     if t["current_rnd"] != 0:
         return redirect(url_for("manager.admin", tid=tid))
-    db = get_db()
-    db.execute("UPDATE tournament SET current_rnd = 1 WHERE id = ?", (tid,))
-    db.commit()
+    rnd_one_start(tid)
     pair_round(tid, 1)
     return redirect(url_for("manager.admin_pairings", tid=tid, rnd=1))
 

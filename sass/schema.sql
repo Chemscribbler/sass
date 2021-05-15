@@ -25,6 +25,7 @@ CREATE TABLE player (
     bias INTEGER DEFAULT 0,
     games_played INTEGER DEFAULT 0,
     received_bye INTEGER DEFAULT 0,
+    is_bye INTEGER DEFAULT 0,
     active INTEGER DEFAULT 1,
     FOREIGN KEY (tid) REFERENCES tournament (id)
 );
