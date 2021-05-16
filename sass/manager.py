@@ -25,9 +25,9 @@ from sass.db import (
     get_rnd_list,
     get_json,
     get_tournaments,
-    drop_player,
+    db_drop_player,
     rnd_one_start,
-    undrop_player,
+    db_undrop_player,
 )
 from sass.tournament import (
     pair_round,
@@ -139,13 +139,13 @@ def admin_pairings(tid, rnd):
 
 @bp.route("/<int:tid>/admin/<int:pid>/drop", methods=["GET", "PUT"])
 def drop_player(tid, pid):
-    drop_player(pid)
+    db_drop_player(pid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
 
 
 @bp.route("/<int:tid>/admin/<int:pid>/undrop", methods=["GET", "PUT"])
 def undrop_player(tid, pid):
-    undrop_player(pid)
+    db_undrop_player(pid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
 
 

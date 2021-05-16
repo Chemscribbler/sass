@@ -1,33 +1,42 @@
 import datetime
-import sqlite3
+from re import T
+from sqlalchemy import create_engine
+from sqlalchemy.engine.url import URL
+from configparser import ConfigParser
 
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+from sqlalchemy.sql.expression import distinct, insert, select, table, text, update
+from sqlalchemy.sql.schema import MetaData, Table
+from sqlalchemy import func
 
 from werkzeug.exceptions import abort
+
+metadata = MetaData()
 
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"], detect_types=sqlite3.PARSE_DECLTYPES
+        config = ConfigParser()
+        config.read("config.ini")
+        g.db = create_engine(
+            URL.create(
+                drivername="postgresql+pg8000",
+                username=config["localdev"]["user"],
+                password=config["localdev"]["password"],
+                database=config["localdev"]["database"],
+                port=config["localdev"]["port"],
+                host=config["localdev"]["host"],
+            )
         )
-        g.db.row_factory = sqlite3.Row
-
+    metadata.reflect(bind=g.db)
     return g.db
-
-
-def close_db(e=None):
-    db = g.pop("db", None)
-
-    if db is not None:
-        db.close()
 
 
 def init_db():
     db = get_db()
-    with current_app.open_resource("schema.sql") as f:
+    with current_app.open_resource("postgres.sql") as f:
         db.executescript(f.read().decode("utf8"))
 
 
@@ -40,16 +49,17 @@ def init_db_command():
 
 
 def init_app(app):
-    app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
 
 
 def get_tournaments():
-    return get_db().execute("SELECT * FROM tournament ORDER BY id DESC").fetchall()
+    return get_db().execute("SELECT * FROM tournament ORDER BY id DESC")
 
 
 def get_tournament(tid):
-    t = get_db().execute("SELECT * FROM tournament WHERE id = ?", (tid,)).fetchone()
+    db = get_db()
+    tourney = metadata.tables["tournament"]
+    t = db.execute(select(tourney).where(tourney.c.id == tid)).fetchone()
 
     if t is None:
         abort(404, f"Tournament id {tid} does not exist")
@@ -82,57 +92,61 @@ def create_tournament(title, date=datetime.date.today()):
 
 def add_player(tid, name, corp_id, runner_id):
     db = get_db()
-    db.execute(
-        "INSERT INTO player (p_name, tid, corp_id, runner_id)" "VALUES (?, ?, ?, ?)",
-        (name, tid, corp_id, runner_id),
-    )
-    db.commit()
+    player = metadata.tables["player"]
+    with db.begin() as conn:
+        conn.execute(
+            insert(player).values(
+                p_name=name, tid=tid, corp_id=corp_id, runner_id=runner_id
+            )
+        )
     return name
 
 
 def get_player(pid):
-    return get_db().execute("SELECT * FROM player WHERE id = ?", (pid,)).fetchone()
+    return (
+        get_db()
+        .execute(text("SELECT * FROM player WHERE id = :pid"), {"pid": pid})
+        .fetchone()
+    )
 
 
 def get_players(tid):
-    return (
-        get_db()
-        .execute(
-            "SELECT * FROM player WHERE tid = ?"
-            "ORDER BY score DESC, sos DESC, esos DESC",
-            (tid,),
-        )
-        .fetchall()
-    )
+    db = get_db()
+    player = metadata.tables["player"]
+    return db.execute(
+        select(player)
+        .where(player.c.tid == tid)
+        .order_by(player.c.score.desc(), player.c.sos.desc(), player.c.esos.desc())
+    ).fetchall()
 
 
 def get_active_players(tid):
     return (
         get_db()
         .execute(
-            "SELECT * FROM player WHERE tid = ? AND active = 1 ORDER BY score DESC, sos DESC, esos DESC",
-            (tid,),
+            text(
+                "SELECT * FROM player WHERE tid = :tid AND active = 1 ORDER BY score DESC, sos DESC, esos DESC"
+            ),
+            {"tid": tid},
         )
         .fetchall()
     )
 
 
-def drop_player(pid):
-    db = get_db()
-    db.execute("UPDATE player SET active = 0 WHERE id = ?", (pid,))
-    db.commit()
+def db_drop_player(pid):
+    with get_db().begin() as conn:
+        conn.execute(text("UPDATE player SET active = 0 WHERE id = :pid"), {"pid": pid})
 
 
-def undrop_player(pid):
-    db = get_db()
-    db.execute("UPDATE player SET active = 1 WHERE id = ?", (pid,))
-    db.commit()
+def db_undrop_player(pid):
+    with get_db().begin() as conn:
+        conn.execute(text("UPDATE player SET active = 1 WHERE id = :pid"), {"pid": pid})
 
 
 def remove_player(pid):
     db = get_db()
-    db.execute("DELETE FROM player WHERE id = ?", (pid,))
-    db.commit()
+    with db.begin() as conn:
+        conn.execute(text("DELETE FROM player WHERE id = :pid"), {"pid": pid})
 
 
 def get_matches(tid, rnd):
@@ -142,8 +156,10 @@ def get_matches(tid, rnd):
     """
     return (
         get_db()
+        .connect()
         .execute(
-            """SELECT match.id, match.corp_id, match.runner_id, match.corp_score,
+            text(
+                """SELECT match.id, match.corp_id, match.runner_id, match.corp_score,
             match.runner_score, match.match_num,
             corp_plr.p_name as corp_player, runner_plr.p_name as runner_player
             FROM match
@@ -151,28 +167,31 @@ def get_matches(tid, rnd):
             ON match.corp_id = corp_plr.id
             LEFT JOIN player runner_plr
             ON match.runner_id = runner_plr.id
-            WHERE match.tid = ? AND match.rnd = ?""",
-            (
-                tid,
-                rnd,
+            WHERE match.tid = :tid AND match.rnd = :rnd
+            ORDER BY match.match_num"""
             ),
+            {
+                "tid": tid,
+                "rnd": rnd,
+            },
         )
         .fetchall()
     )
 
 
 def get_match(mid):
-    return get_db().execute("SELECT * FROM match WHERE id = ?", (mid,)).fetchone()
+    db = get_db()
+    match = metadata.tables["match"]
+    return db.connect().execute(select(match).where(match.c.id == mid)).fetchone()
 
 
 def get_rnd_list(tid):
     return (
         get_db()
+        .connect()
         .execute(
-            """
-            SELECT DISTINCT(rnd) as rnds FROM match WHERE tid=?
-            """,
-            (tid,),
+            text("SELECT DISTINCT(rnd) as rnds FROM match WHERE tid=:tid"),
+            {"tid": tid},
         )
         .fetchall()
     )
@@ -181,6 +200,12 @@ def get_rnd_list(tid):
 def get_last_rnd(tid):
     q = (
         get_db()
+        .connect()
+        .execute(
+            func.max(metadata.tables["match"].c.rnd).where(
+                metadata.tables["match"].c.tid == tid
+            )
+        )
         .execute("SELECT MAX(rnd) as rnd FROM match WHERE tid=?", (tid,))
         .fetchone()
     )
@@ -188,22 +213,21 @@ def get_last_rnd(tid):
 
 
 def rnd_one_start(tid):
-    db = get_db()
-    db.execute("UPDATE tournament SET current_rnd = 1 WHERE id = ?", (tid,))
-    db.commit()
+    with get_db().begin() as conn:
+        tourn = metadata.tables["tournament"]
+        conn.execute(update(tourn).where(tourn.c.id == tid).values(current_rnd=1))
 
 
 def delete_pairings(tid, rnd):
     db = get_db()
-    db.execute(
-        "DELETE FROM match WHERE tid=? AND rnd = ?",
-        (
-            tid,
-            rnd,
-        ),
-    )
-    db.execute("DELETE FROM player WHERE is_bye = 1 AND tid = ?", (tid,))
-    db.commit()
+    with db.begin() as conn:
+        conn.execute(
+            text("DELETE FROM match WHERE tid=:tid AND rnd = :rnd"),
+            {"tid": tid, "rnd": rnd},
+        )
+        conn.execute(
+            text("DELETE FROM player WHERE is_bye = 1 AND tid = ?"), {"tid": tid}
+        )
 
 
 def get_json(tid):
