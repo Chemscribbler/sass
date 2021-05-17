@@ -75,7 +75,7 @@ def create():
 
         if error is None:
             selector = create_tournament(title=t_name, date=t_date)
-            return redirect(url_for("manager.main", tid=selector))
+            return redirect(url_for("manager.main", tid=selector.id))
 
         flash(error)
 

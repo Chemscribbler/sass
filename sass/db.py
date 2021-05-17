@@ -10,6 +10,7 @@ from flask.cli import with_appcontext
 from sqlalchemy.sql.expression import distinct, insert, select, table, text, update
 from sqlalchemy.sql.schema import MetaData, Table
 from sqlalchemy import func
+import sqlparse
 
 from werkzeug.exceptions import abort
 
@@ -36,8 +37,9 @@ def get_db():
 
 def init_db():
     db = get_db()
-    with current_app.open_resource("postgres.sql") as f:
-        db.executescript(f.read().decode("utf8"))
+    with current_app.open_resource("postgres.sql", "r") as f:
+        for statement in sqlparse.split(f):
+            db.connect().execute(text(statement))
 
 
 @click.command("init-db")
@@ -69,25 +71,14 @@ def get_tournament(tid):
 
 def create_tournament(title, date=datetime.date.today()):
     db = get_db()
-    db.execute(
-        "INSERT INTO tournament (title, date) VALUES (?, ?)",
-        (
-            title,
-            date,
-        ),
-    )
-    db.commit()
-    tournaments = db.execute(
-        "SELECT * FROM tournament WHERE title = ? AND date = ?",
-        (
-            title,
-            date,
-        ),
-    ).fetchall()
-    selector = 0
-    for t in tournaments:
-        selector = t["id"]
-    return selector
+    tournament_table = metadata.tables["tournament"]
+    with db.begin() as conn:
+        stmt = (
+            insert(tournament_table)
+            .values(title=title, t_date=date)
+            .returning(tournament_table)
+        )
+        return conn.execute(stmt).fetchone()
 
 
 def add_player(tid, name, corp_id, runner_id):

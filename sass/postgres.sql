@@ -1,16 +1,13 @@
-DROP TABLE IF EXISTS player;
 DROP TABLE IF EXISTS match;
+DROP TABLE IF EXISTS player;
 DROP TABLE IF EXISTS tournament;
-
--- PRAGMA encoding = 'UTF-8'
--- PRAGMA foreign_keys = ON
 
 CREATE TABLE tournament (
     id serial PRIMARY KEY,
     title VARCHAR (50) UNIQUE NOT NULL,
     t_date TIMESTAMP NOT NULL,
     current_rnd INTEGER DEFAULT 0,
-    active BOOLEAN DEFAULT 1    
+    active BOOLEAN DEFAULT true    
 );
 
 CREATE TABLE player (
@@ -24,9 +21,9 @@ CREATE TABLE player (
     esos REAL DEFAULT 0.0,
     bias INTEGER DEFAULT 0,
     games_played INTEGER DEFAULT 0,
-    received_bye BOOLEAN DEFAULT 0,
-    is_bye BOOLEAN DEFAULT 0,
-    active BOOLEAN DEFAULT 1,
+    received_bye BOOLEAN DEFAULT false,
+    is_bye BOOLEAN DEFAULT false,
+    active BOOLEAN DEFAULT true,
     FOREIGN KEY (tid) REFERENCES tournament (id)
 );
 
@@ -43,5 +40,3 @@ CREATE TABLE match (
     FOREIGN KEY (corp_id) REFERENCES player (id),
     FOREIGN KEY (runner_id) REFERENCES player (id)
 );
-
--- INSERT INTO tournament (title) VALUES ("Placeholder",)
