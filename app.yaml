@@ -1,1 +1,4 @@
 runtime: python39
+
+env_variables:
+  CLOUD_STORAGE_BUCKET: sass-313212.appspot.com
