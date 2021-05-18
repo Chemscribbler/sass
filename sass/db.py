@@ -1,12 +1,8 @@
 import datetime
-<<<<<<< Updated upstream
-import sqlite3
-=======
 from re import T
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 import os
->>>>>>> Stashed changes
 
 import click
 from flask import current_app, g
@@ -17,10 +13,6 @@ from werkzeug.exceptions import abort
 
 def get_db():
     if "db" not in g:
-<<<<<<< Updated upstream
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"], detect_types=sqlite3.PARSE_DECLTYPES
-=======
         db_user = os.environ["DB_USER"]
         db_pass = os.environ["DB_PASS"]
         db_name = os.environ["DB_NAME"]
@@ -38,9 +30,7 @@ def get_db():
                     )
                 },
             )
->>>>>>> Stashed changes
         )
-        g.db.row_factory = sqlite3.Row
 
     return g.db
 
