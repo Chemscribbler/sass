@@ -18,7 +18,6 @@ from sass.db import (
     add_player,
     create_tournament,
     delete_pairings,
-    get_db,
     get_match,
     get_players,
     get_matches,
@@ -26,9 +25,9 @@ from sass.db import (
     get_rnd_list,
     get_json,
     get_tournaments,
-    drop_player,
+    db_drop_player,
     rnd_one_start,
-    undrop_player,
+    db_undrop_player,
 )
 from sass.tournament import (
     pair_round,
@@ -76,7 +75,7 @@ def create():
 
         if error is None:
             selector = create_tournament(title=t_name, date=t_date)
-            return redirect(url_for("manager.main", tid=selector))
+            return redirect(url_for("manager.main", tid=selector.id))
 
         flash(error)
 
@@ -130,7 +129,7 @@ def admin(tid):
     return render_template("t_admin.html", data=make_data_package(tid))
 
 
-@bp.route("/<int:tid>/<int:rnd>/admin", methods=["GET", "POST"])
+@bp.route("/<int:tid>/<int:rnd>/admin", methods=["GET", "POST", "PUT"])
 def admin_pairings(tid, rnd):
     return render_template(
         "t_admin_pairings.html",
@@ -140,13 +139,13 @@ def admin_pairings(tid, rnd):
 
 @bp.route("/<int:tid>/admin/<int:pid>/drop", methods=["GET", "PUT"])
 def drop_player(tid, pid):
-    drop_player(pid)
+    db_drop_player(pid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
 
 
 @bp.route("/<int:tid>/admin/<int:pid>/undrop", methods=["GET", "PUT"])
 def undrop_player(tid, pid):
-    undrop_player(pid)
+    db_undrop_player(pid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
 
 
@@ -206,10 +205,10 @@ def finish_round(tid, rnd):
         )
 
 
-@bp.route("<int:tid>/<int:rnd>/delete", methods=["PUT"])
+@bp.route("/<int:tid>/<int:rnd>/delete", methods=["POST"])
 def undo_pairings(tid, rnd):
     delete_pairings(tid, rnd)
-    return redirect(url_for("manager.admin_pairings", tid=tid, rnd=rnd))
+    return redirect(url_for("manager.admin", tid=tid), code=303)
 
 
 @bp.route("/<int:tid>/admin/start", methods=["POST"])
@@ -225,8 +224,3 @@ def start_tournament(tid):
 @bp.route("/<int:tid>.json", methods=["GET"])
 def report_json(tid):
     return get_json(tid)
-
-
-@bp.route("/<int:tid>/<int:rnd>/delete", methods=["POST"])
-def delete_rnd(tid, rnd):
-    pass
