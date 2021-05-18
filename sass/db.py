@@ -23,7 +23,6 @@ metadata = MetaData()
 
 def get_db():
     if "db" not in g:
-<<<<<<< HEAD
         db_user = os.environ["DB_USER"]
         db_pass = os.environ["DB_PASS"]
         db_name = os.environ["DB_NAME"]
@@ -42,22 +41,7 @@ def get_db():
                 },
             )
         )
-
-=======
-        config = ConfigParser()
-        config.read("config.ini")
-        g.db = create_engine(
-            URL.create(
-                drivername="postgresql+pg8000",
-                username=config["localdev"]["user"],
-                password=config["localdev"]["password"],
-                database=config["localdev"]["database"],
-                port=config["localdev"]["port"],
-                host=config["localdev"]["host"],
-            )
-        )
     metadata.reflect(bind=g.db)
->>>>>>> main
     return g.db
 
 
