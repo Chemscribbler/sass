@@ -1,4 +1,7 @@
 runtime: python39
 
 env_variables:
-  CLOUD_STORAGE_BUCKET: sass-313212.appspot.com
+  CLOUD_SQL_CONNECTION_NAME: sass-313212:us-east4:aesops-dev
+  DB_USER: postgres
+  DB_PASS: txXjip89Anh
+  DB_NAME: aesopsdb

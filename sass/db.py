@@ -2,7 +2,7 @@ import datetime
 from re import T
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
-from configparser import ConfigParser
+import os
 
 import click
 from flask import current_app, g
@@ -19,16 +19,22 @@ metadata = MetaData()
 
 def get_db():
     if "db" not in g:
-        config = ConfigParser()
-        config.read("config.ini")
+        db_user = os.environ["DB_USER"]
+        db_pass = os.environ["DB_PASS"]
+        db_name = os.environ["DB_NAME"]
+        db_socket_dir = os.environ.get("DB_SOCKET_DIR", "/cloudsql")
+        cloud_sql_connection_name = os.environ["CLOUD_SQL_CONNECTION_NAME"]
         g.db = create_engine(
             URL.create(
                 drivername="postgresql+pg8000",
-                username=config["localdev"]["user"],
-                password=config["localdev"]["password"],
-                database=config["localdev"]["database"],
-                port=config["localdev"]["port"],
-                host=config["localdev"]["host"],
+                username=db_user,
+                password=db_pass,
+                database=db_name,
+                query={
+                    "unix_sock": "{}/{}/.s.PGSQL.5432".format(
+                        db_socket_dir, cloud_sql_connection_name
+                    )
+                },
             )
         )
     metadata.reflect(bind=g.db)
@@ -107,6 +113,7 @@ def get_players(tid):
     return db.execute(
         select(player)
         .where(player.c.tid == tid)
+        .where(player.c.is_bye == False)
         .order_by(player.c.score.desc(), player.c.sos.desc(), player.c.esos.desc())
     ).fetchall()
 
@@ -116,7 +123,7 @@ def get_active_players(tid):
         get_db()
         .execute(
             text(
-                "SELECT * FROM player WHERE tid = :tid AND active = 1 ORDER BY score DESC, sos DESC, esos DESC"
+                "SELECT * FROM player WHERE tid = :tid AND active = true ORDER BY score DESC, sos DESC, esos DESC"
             ),
             {"tid": tid},
         )
@@ -126,12 +133,16 @@ def get_active_players(tid):
 
 def db_drop_player(pid):
     with get_db().begin() as conn:
-        conn.execute(text("UPDATE player SET active = 0 WHERE id = :pid"), {"pid": pid})
+        conn.execute(
+            text("UPDATE player SET active = false WHERE id = :pid"), {"pid": pid}
+        )
 
 
 def db_undrop_player(pid):
     with get_db().begin() as conn:
-        conn.execute(text("UPDATE player SET active = 1 WHERE id = :pid"), {"pid": pid})
+        conn.execute(
+            text("UPDATE player SET active = true WHERE id = :pid"), {"pid": pid}
+        )
 
 
 def remove_player(pid):
@@ -217,7 +228,7 @@ def delete_pairings(tid, rnd):
             {"tid": tid, "rnd": rnd},
         )
         conn.execute(
-            text("DELETE FROM player WHERE is_bye = 1 AND tid = ?"), {"tid": tid}
+            text("DELETE FROM player WHERE is_bye = true AND tid = :tid"), {"tid": tid}
         )
 
 
