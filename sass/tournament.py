@@ -1,5 +1,6 @@
 from sqlalchemy.sql.expression import insert, text, select, update
-from sass.db import get_db, get_tournament, get_active_players, get_player, metadata
+from sass.db import get_tournament, get_active_players, get_player
+from sass.db_grabber import get_db, metadata
 from networkx import Graph, max_weight_matching
 from itertools import combinations
 from random import random
@@ -45,9 +46,7 @@ def add_bye_player(tid, bye_number=1):
     """
     with get_db().begin() as conn:
         conn.execute(
-            text(
-                "INSERT INTO player (tid, p_name, is_bye, score) VALUES (:tid, 'Bye', true, -9)"
-            ),
+            "INSERT INTO player (tid, p_name, is_bye, score) VALUES (:tid, 'Bye', 1, -9)",
             {"tid": tid},
         )
     return get_active_players(tid)
@@ -194,8 +193,7 @@ def close_round(tid, rnd):
             raise PairingException("Not all matches have reported result")
         update_byes_recieved(tid)
         conn.execute(
-            text("UPDATE player SET active=false WHERE is_bye = true AND tid = :tid"),
-            {"tid": tid},
+            text("DELETE FROM player WHERE is_bye = 1 AND tid = :tid"), {"tid": tid}
         )
         update_scores(tid)
         update_bias(tid)
@@ -217,13 +215,13 @@ def score_byes(tid, rnd):
     with get_db().begin() as conn:
         conn.execute(
             text(
-                "UPDATE match SET runner_score = 3, corp_score = 0 FROM player WHERE player.id = match.corp_id AND player.is_bye = true AND match.tid = :tid AND rnd = :rnd"
+                "UPDATE match SET runner_score = 3, corp_score = 0 WHERE corp_id < 0 AND tid = :tid AND rnd = :rnd"
             ),
             {"tid": tid, "rnd": rnd},
         )
         conn.execute(
             text(
-                "UPDATE match SET corp_score = 3, runner_score = 0 FROM player WHERE player.id = match.runner_id AND player.is_bye = true AND match.tid = :tid and rnd = :rnd"
+                "UPDATE match SET corp_score = 3, runner_score = 0 WHERE runner_id < 0 AND tid = :tid and rnd = :rnd"
             ),
             {"tid": tid, "rnd": rnd},
         )
@@ -304,15 +302,13 @@ def update_bias(tid):
                 SELECT p.id AS id, p.p_name AS name, count(m.corp_id) AS corp_games, 0 AS runner_games
                 FROM player p
                 INNER JOIN match m on p.id = m.corp_id
-                INNER JOIN player o ON o.id = m.runner_id
-                WHERE p.tid = :tid AND o.is_bye = false AND p.is_bye = false
+                WHERE p.tid = :tid AND m.runner_id > 0
                 group by p.id
                 UNION
                 SELECT p.id AS id, p.p_name AS name, 0 AS corp_games, count(m.runner_id) AS runner_games
                 FROM player p
                 INNER JOIN match m on p.id = m.runner_id
-                INNER JOIN player o ON o.id = m.corp_id
-                WHERE p.tid = :tid AND o.is_bye = false AND p.is_bye = false
+                WHERE p.tid = :tid AND m.corp_id > 0
                 group by p.id
             ) as t
         group by t.id, t.name
@@ -338,24 +334,30 @@ def update_sos(tid):
         sos_table = conn.execute(
             text(
                 """
-            SELECT id, sum(coalesce(score,0)) as total_opp_score,
-            sum(coalesce(opg, 0)) as total_opp_games_played
+            SELECT id, name, sum(coalesce(opp_score,0)) as total_opp_score,
+            sum(coalesce(opp_games_played, 0)) as total_opp_games_played
             FROM (
-                    select p.id, sum(coalesce(o.games_played,0)) as opg, sum(coalesce(o.score,0)) as score
+                SELECT p.id as id, p.name as name, o.score as opp_score, o.games_played as opp_games_played
+                FROM (
+                    SELECT p.id as id, p.p_name as name, m.corp_id as opp_id
                     FROM player p
                     INNER JOIN match m on p.id = m.runner_id
-                    INNER JOIN player o ON m.corp_id = o.id
-                    where p.tid = :tid AND p.is_bye = false AND o.is_bye = false
-                    group by p.id
-
+                    where p.tid = :tid
+                ) as p
+                INNER JOIN player o on p.opp_id = o.id
+                group by p.id, p.name, o.score, o.games_played
                 UNION
-                select p.id, sum(coalesce(o.games_played,0)) as opg, sum(coalesce(o.score,0)) as score
+                SELECT p.id as id, p.name as name, o.score as opp_score, o.games_played as opp_games_played
+                FROM (
+                    SELECT p.id as id, p.p_name as name, m.runner_id as opp_id
                     FROM player p
                     INNER JOIN match m on p.id = m.corp_id
-                    INNER JOIN player o ON m.runner_id = o.id
-                    where p.tid = :tid AND p.is_bye = false AND o.is_bye = false
-                    group by p.id) as t
-            group by t.id
+                    WHERE p.tid = :tid
+                ) as p
+                INNER JOIN player o on p.opp_id = o.id
+                group by p.id, p.name, o.score, o.games_played
+            ) as t 
+            group by t.id, t.name
             """
             ),
             {"tid": tid},
@@ -379,24 +381,30 @@ def update_esos(tid):
         sos_table = conn.execute(
             text(
                 """
-            SELECT id, sum(coalesce(sos,0)) as total_opp_sos,
-            sum(coalesce(opg, 0)) as total_opp_games_played
+            SELECT id, name, sum(coalesce(opp_sos,0)) as total_opp_sos,
+            sum(coalesce(opp_games_played, 0)) as total_opp_games_played
             FROM (
-                    select p.id, sum(coalesce(o.games_played,0)) as opg, sum(coalesce(o.sos,0)) as sos
+                SELECT p.id as id, p.name as name, o.sos as opp_sos, o.games_played as opp_games_played
+                FROM (
+                    SELECT p.id as id, p.p_name as name, m.corp_id as opp_id
                     FROM player p
                     INNER JOIN match m on p.id = m.runner_id
-                    INNER JOIN player o ON m.corp_id = o.id
-                    where p.tid = :tid AND p.is_bye = false AND o.is_bye = false
-                    group by p.id
-
+                    where p.tid = :tid
+                ) as p
+                INNER JOIN player o on p.opp_id = o.id
+                group by p.id, p.name, o.sos, o.games_played
                 UNION
-                select p.id, sum(coalesce(o.games_played,0)) as opg, sum(coalesce(o.sos,0)) as sos
+                SELECT p.id as id, p.name as name, o.sos as opp_sos, o.games_played as opp_games_played
+                FROM (
+                    SELECT p.id as id, p.p_name as name, m.runner_id as opp_id
                     FROM player p
                     INNER JOIN match m on p.id = m.corp_id
-                    INNER JOIN player o ON m.runner_id = o.id
-                    where p.tid = :tid AND p.is_bye = false AND o.is_bye = false
-                    group by p.id) as t
-            group by t.id
+                    WHERE p.tid = :tid
+                ) as p
+                INNER JOIN player o on p.opp_id = o.id
+                group by p.id, p.name, o.sos, o.games_played
+            ) as t
+            group by t.id, t.name
             """
             ),
             {"tid": tid},
@@ -447,14 +455,14 @@ def update_byes_recieved(tid):
             ON p.id = m.corp_id
             INNER JOIN player o
             ON o.id = m.runner_id
-            WHERE o.is_bye = true AND p.tid = :tid
+            WHERE o.is_bye = 1 AND p.tid = :tid
             """
             ),
             {"tid": tid},
         ).fetchall()
         for i in byes:
             conn.execute(
-                text("UPDATE player SET received_bye = true WHERE id = :pid"),
+                text("UPDATE player SET received_bye = 1 WHERE id = :pid"),
                 {"pid": i["id"]},
             )
         byes = conn.execute(
@@ -466,14 +474,14 @@ def update_byes_recieved(tid):
             ON p.id = m.runner_id
             INNER JOIN player o
             ON o.id = m.corp_id
-            WHERE o.is_bye = true AND p.tid = :tid
+            WHERE o.is_bye = 1 AND p.tid = :tid
             """
             ),
             {"tid": tid},
         ).fetchall()
         for i in byes:
             conn.execute(
-                text("UPDATE player SET received_bye = true WHERE id = :pid"),
+                text("UPDATE player SET received_bye = 1 WHERE id = :pid"),
                 {"pid": i["id"]},
             )
 
