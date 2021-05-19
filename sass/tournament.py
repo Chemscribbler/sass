@@ -21,7 +21,7 @@ def pair_round(tid, rnd):
     table_match = metadata.tables["match"]
     with db.begin() as conn:
         for i, match in enumerate(match_list):
-            db.execute(
+            conn.execute(
                 insert(table_match).values(
                     corp_id=match[0],
                     runner_id=match[1],
@@ -41,7 +41,7 @@ def pair_round(tid, rnd):
     score_byes(tid, rnd)
 
 
-def add_bye_player(tid, bye_number=1):
+def add_bye_player(tid):
     """
     Adds a bye player- the bye_number is future proofing for multiple 1st round byes
     """
@@ -427,7 +427,9 @@ def update_esos(tid):
 
 def get_ids():
     if not os.path.exists("ids.json"):
-        all_cards = requests.get("https://netrunnerdb.com/api/2.0/public/cards")
+        all_cards = requests.get(
+            "https://netrunnerdb.com/api/2.0/public/cards", timeout=5
+        )
         ids = [
             {
                 "side": card["side_code"],

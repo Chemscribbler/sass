@@ -1,6 +1,13 @@
 {% extends 't_base.html'%}
 
 {% block content %}
+
+{% if data.t.current_rnd == 0 %}
+<form method="GET" action={{url_for('manager.register', tid=data.t.id)}}>
+    <button class="btn btn-primary" type="submit">Register</button>
+</form>
+{% endif %}
+
 <table class="table table-striped">
     <thead>
         <tr>
@@ -22,8 +29,13 @@
         <td>{{plr['sos']}}</td>
         <td>{{plr['esos']}}</td>
         <td>{{plr['bias']}}</td>
+        {% if data.t.current_rnd != 0 %}
         <td>{{plr['corp_id']}}</td>
         <td>{{plr['runner_id']}}</td>
+        {% else %}
+        <td>-</td>
+        <td>-</td>
+        {% endif %}
     </tr>
     {% endfor %}
 </table>

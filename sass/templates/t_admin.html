@@ -61,5 +61,15 @@
         <button type="submit" class="btn btn-primary">Pair Round</button>
     </form>
 </div>
-
+<div class="p-1">
+    <form action={{ url_for('manager.change_t_status', tid=data.t.id)}} method="POST">
+        <button type="submit" class="btn btn-warning">
+            {% if data.t.active %}
+            Remove from Front Page
+            {% else %}
+            Add to Front Page
+            {% endif %}
+        </button>
+    </form>
+</div>
 {% endblock %}

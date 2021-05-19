@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from flask import (
     Flask,
     Blueprint,
@@ -28,6 +28,7 @@ from sass.db import (
     db_drop_player,
     rnd_one_start,
     db_undrop_player,
+    switch_tournament_activity,
 )
 from sass.tournament import (
     pair_round,
@@ -65,9 +66,7 @@ def home():
 def create():
     if request.method == "POST":
         t_name = request.form["title"]
-        t_date = request.form["date"]
-        if len(t_date) < 2:
-            t_date = None
+        t_date = date.today()
 
         error = None
         if t_name is None:
@@ -224,3 +223,9 @@ def start_tournament(tid):
 @bp.route("/<int:tid>.json", methods=["GET"])
 def report_json(tid):
     return get_json(tid)
+
+
+@bp.route("/<int:tid>/changeactive", methods=["POST"])
+def change_t_status(tid):
+    switch_tournament_activity(tid)
+    return redirect(url_for("manager.admin", tid=tid), code=303)

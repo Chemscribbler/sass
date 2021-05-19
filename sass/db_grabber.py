@@ -3,6 +3,7 @@ from sqlalchemy.sql.schema import MetaData
 from configparser import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
+import os
 
 metadata = MetaData()
 

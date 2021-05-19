@@ -1,4 +1,5 @@
 import datetime
+import operator
 from re import T
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
@@ -166,7 +167,7 @@ def get_rnd_list(tid):
         get_db()
         .connect()
         .execute(
-            text("SELECT DISTINCT(rnd) as rnds FROM match WHERE tid=:tid"),
+            text("SELECT DISTINCT(rnd) as rnds FROM match WHERE tid=:tid ORDER BY rnd"),
             {"tid": tid},
         )
         .fetchall()
@@ -204,6 +205,18 @@ def delete_pairings(tid, rnd):
         conn.execute(
             text("DELETE FROM player WHERE is_bye = true AND tid = :tid"), {"tid": tid}
         )
+
+
+def switch_tournament_activity(tid):
+    db = get_db()
+    tourn = metadata.tables["tournament"]
+    with db.begin() as conn:
+        t = conn.execute(select(tourn).where(tourn.c.id == tid)).fetchone()
+        if t.active:
+            setto = False
+        else:
+            setto = True
+        conn.execute(update(tourn).where(tourn.c.id == tid).values(active=setto))
 
 
 def get_json(tid):

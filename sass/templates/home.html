@@ -12,9 +12,16 @@
         </tr>
     </thead>
     {% for tournament in tournaments %}
+    {% if tournament.active %}
     <tr>
         <td><a href={{ url_for('manager.main', tid=tournament.id)}}>{{tournament.title}}</a></td>
     </tr>
+    {% endif %}
     {% endfor %}
 </table>
+<div class="p-1">
+    <form action={{ url_for('manager.create') }} method="GET">
+        <button type="submit" class="btn btn-primary">Create Tournament</button>
+    </form>
+</div>
 {% endblock %}
