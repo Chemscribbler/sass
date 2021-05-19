@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS tournament;
 
 CREATE TABLE tournament (
     id serial PRIMARY KEY,
-    title VARCHAR (50) UNIQUE NOT NULL,
+    title TEXT UNIQUE NOT NULL,
     t_date TIMESTAMP NOT NULL,
     current_rnd INTEGER DEFAULT 0,
     active BOOLEAN DEFAULT true    
@@ -13,9 +13,9 @@ CREATE TABLE tournament (
 CREATE TABLE player (
     id serial PRIMARY KEY,
     tid INTEGER NOT NULL,
-    p_name VARCHAR (50) NOT NULL,
-    corp_id VARCHAR (50),
-    runner_id VARCHAR (50),
+    p_name TEXT NOT NULL,
+    corp_id TEXT,
+    runner_id TEXT,
     score INTEGER DEFAULT 0,
     sos REAL DEFAULT 0.0,
     esos REAL DEFAULT 0.0,

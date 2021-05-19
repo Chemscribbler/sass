@@ -29,6 +29,9 @@ from sass.db import (
     rnd_one_start,
     db_undrop_player,
     switch_tournament_activity,
+    remove_player,
+    update_player,
+    get_player,
 )
 from sass.tournament import (
     pair_round,
@@ -149,9 +152,34 @@ def undrop_player(tid, pid):
 
 
 @bp.route("/<int:tid>/admin/<int:pid>/remove", methods=["POST"])
-def remove_player(tid, pid):
-    remove_player
+def delete_player(tid, pid):
+    remove_player(pid)
     return redirect(url_for("manager.admin", tid=tid))
+
+
+@bp.route("/<int:tid>/admin/<int:pid>/update", methods=["GET", "POST"])
+def edit_player(tid, pid):
+    if request.method == "POST":
+        name = request.form["name"]
+        corp_id = request.form["corp_id"]
+        runner_id = request.form["runner_id"]
+        update_player(pid, name, corp_id, runner_id)
+        return redirect(url_for("manager.admin", tid=tid))
+
+    ids = get_ids()
+    corp_ids = {card["name"]: card["faction"] for card in ids if card["side"] == "corp"}
+    runner_ids = {
+        card["name"]: card["faction"] for card in ids if card["side"] == "runner"
+    }
+    corp_order = sorted(corp_ids)
+    runner_order = sorted(runner_ids)
+    plr = get_player(pid)
+    return render_template(
+        "t_player_edit.html",
+        data=make_data_package(tid),
+        ids={"corps": corp_order, "runners": runner_order},
+        pstarter={"name": plr.p_name, "corp": plr.corp_id, "runner": plr.runner_id},
+    )
 
 
 @bp.route("/<int:tid>/admin/pair", methods=["GET", "POST"])

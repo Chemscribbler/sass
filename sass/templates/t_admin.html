@@ -43,10 +43,13 @@
             </form>
             {% endif %}
             {% if data.t.current_rnd == 0 %}
-            <form action={{ url_for('manager.remove_player' , tid=plr.tid, pid=plr.id) }} method="post">
+            <form action={{ url_for('manager.delete_player' , tid=plr.tid, pid=plr.id) }} method="post">
                 <button type="submit" class="btn btn-danger">🗑</button>
             </form>
             {% endif %}
+            <form action={{url_for('manager.edit_player', tid=plr.tid, pid=plr.id)}} method="get">
+                <button type="submit" class="btn btn-primary">📝</button>
+            </form>
         </td>
     </tr>
     {% endfor %}

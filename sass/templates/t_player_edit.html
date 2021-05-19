@@ -1,0 +1,32 @@
+{% extends 't_base.html' %}
+
+{% block content %}
+<form method="post" class="row g-3">
+    <div class="col-md-3">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" value={{pstarter['name']}} required>
+    </div>
+    <div class="col-md-3">
+        <label for="corp_id">Corp ID</label>
+        <select class="form-select" name="corp_id">
+            <option selected>{{pstarter["corp"]}}</option>
+            {% for corp_id in ids.corps %}
+            <option>{{corp_id}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="runner_id">Runner ID</label>
+        <select class="form-select" name="runner_id">
+            <option selected>{{pstarter["runner"]}}</option>
+            {% for runner_id in ids.runners %}
+            <option>{{runner_id}}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Update</button>
+    </div>
+</form>
+
+{% endblock %}

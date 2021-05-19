@@ -126,6 +126,17 @@ def remove_player(pid):
         conn.execute(text("DELETE FROM player WHERE id = :pid"), {"pid": pid})
 
 
+def update_player(pid, name, corp_id, runner_id):
+    db = get_db()
+    plr = metadata.tables["player"]
+    with db.begin() as conn:
+        conn.execute(
+            update(plr)
+            .where(plr.c.id == pid)
+            .values(p_name=name, corp_id=corp_id, runner_id=runner_id)
+        )
+
+
 def get_matches(tid, rnd):
     """
     tid: Tournament ID
