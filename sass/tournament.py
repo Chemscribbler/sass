@@ -7,6 +7,8 @@ from json import load, dump
 import requests
 import os.path
 from sass.exceptions import PairingException
+from sass.db_grabber import get_db, metadata
+import decimal
 
 
 def pair_round(tid, rnd):
@@ -190,14 +192,18 @@ def close_round(tid, rnd):
     Check to see if all matches report
     """
     with get_db().begin() as conn:
+        print("testing")
         if not all_reported(tid, rnd):
             raise PairingException("Not all matches have reported result")
         update_byes_recieved(tid)
+
         conn.execute(
             text("UPDATE player SET active=false WHERE is_bye = true AND tid = :tid"),
             {"tid": tid},
         )
+
         update_scores(tid)
+        print("A thing")
         update_bias(tid)
         update_sos(tid)
         update_esos(tid)
@@ -256,6 +262,7 @@ def record_result(mid, corp_score, runner_score):
 
 def update_scores(tid):
     with get_db().begin() as conn:
+        print("scoring")
         scores_table = conn.execute(
             text(
                 """
@@ -279,17 +286,20 @@ def update_scores(tid):
             ),
             {"tid": tid},
         ).fetchall()
+        print("got scores")
         for player in scores_table:
+            print(player)
             conn.execute(
                 text(
-                    "UPDATE player SET score = :score WHERE id = :pid",
+                    "UPDATE player SET score = :score WHERE id = :pid AND is_bye = false",
                 ),
                 {
-                    "score": player["corp_points"] + player["runner_points"],
+                    "score": float(player["corp_points"])
+                    + float(player["runner_points"]),
                     "pid": player["id"],
-                }
-                # (player["corp_points"] + player["runner_points"], player["id"]),
+                },
             )
+        print("updated scores")
     update_bias(tid)
 
 
@@ -365,8 +375,8 @@ def update_sos(tid):
                 text("UPDATE player SET sos = :sos WHERE id = :pid"),
                 {
                     "sos": round(
-                        player["total_opp_score"]
-                        / max(player["total_opp_games_played"], 1),
+                        decimal.Decimal(player["total_opp_score"])
+                        / decimal.Decimal(max(player["total_opp_games_played"], 1)),
                         3,
                     ),
                     "pid": player["id"],
@@ -406,8 +416,8 @@ def update_esos(tid):
                 text("UPDATE player SET esos = :esos WHERE id = :pid"),
                 {
                     "esos": round(
-                        player["total_opp_sos"]
-                        / max(player["total_opp_games_played"], 1),
+                        decimal.Decimal(player["total_opp_sos"])
+                        / decimal.Decimal(max(player["total_opp_games_played"], 1)),
                         4,
                     ),
                     "pid": player["id"],
