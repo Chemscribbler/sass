@@ -1,23 +1,14 @@
 import os
 
 from flask import Flask
-from google.cloud import storage
 
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    DB_PATH = os.path.join(app.instance_path, "sass.sqlite")
-    try:
-        from shutil import copyfile
-
-        DB_PATH = "/tmp/sass.sqlite"
-        copyfile(os.path.join(app.instance_path, "sass.sqlite"), DB_PATH)
-    except:
-        pass
     app.config.from_mapping(
-        SECRET_KEY="jeff_is_great",
-        DATABASE=DB_PATH,
+        SECRET_KEY="dev",
+        DATABASE=os.path.join(app.instance_path, "sass.sqlite"),
     )
 
     if test_config is None:
