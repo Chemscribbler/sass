@@ -8,31 +8,13 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 from sqlalchemy.sql.expression import distinct, insert, select, table, text, update
-from sqlalchemy.sql.schema import MetaData, Table
+from sqlalchemy.sql.schema import Table
 from sqlalchemy import func
 import sqlparse
 
 from werkzeug.exceptions import abort
 
-metadata = MetaData()
-
-
-def get_db():
-    if "db" not in g:
-        config = ConfigParser()
-        config.read("config.ini")
-        g.db = create_engine(
-            URL.create(
-                drivername="postgresql+pg8000",
-                username=config["localdev"]["user"],
-                password=config["localdev"]["password"],
-                database=config["localdev"]["database"],
-                port=config["localdev"]["port"],
-                host=config["localdev"]["host"],
-            )
-        )
-    metadata.reflect(bind=g.db)
-    return g.db
+from sass.db_grabber import get_db, metadata
 
 
 def init_db():

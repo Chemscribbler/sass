@@ -1,5 +1,6 @@
 from sqlalchemy.sql.expression import insert, text, select, update
-from sass.db import get_db, get_tournament, get_active_players, get_player, metadata
+from sass.db import get_tournament, get_active_players, get_player
+from sass.db_grabber import get_db, metadata
 from networkx import Graph, max_weight_matching
 from itertools import combinations
 from random import random
