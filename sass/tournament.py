@@ -65,8 +65,10 @@ def make_pairings(plrs):
         p2 = get_player(pair[1])
         corp_player_id, runner_player_id, side_bias_cost = get_side_tuple(p1, p2)
         if side_bias_cost is None:
+            print(f"{p1.p_name} v. {p2.p_name} cannot play")
             continue
         score_cost = calc_score_cost(p1["score"], p2["score"])
+        print(f"{p1.p_name} v. {p2.p_name}: {side_bias_cost+score_cost}")
         graph.add_edge(
             p1,
             p2,
@@ -136,7 +138,7 @@ def calc_corp_cost(p1_side_bias, p2_side_bias):
     """
     init_max_bias = max(abs(p1_side_bias), abs(p2_side_bias))
     prime_max_bias = max(abs(p1_side_bias + 1), abs(p2_side_bias - 1))
-    return 8 ** prime_max_bias * (prime_max_bias > init_max_bias)
+    return 8 ** prime_max_bias * (prime_max_bias >= init_max_bias)
 
 
 def calc_score_cost(p1_score, p2_score):
@@ -164,13 +166,10 @@ def can_corp(p1, p2):
         if p1_corped_query is None and p2_corped_query is None:
             return 0
         elif p1_corped_query is None:
-            print(f"Only {p1['p_name']} can corp")
             return p1["id"]
         elif p2_corped_query is None:
-            print(f"Only {p2['p_name']} can corp")
             return p2["id"]
         else:
-            print(f"{p1['p_name']} and {p2['p_name']} cannot play")
             return None
 
 
@@ -192,7 +191,6 @@ def close_round(tid, rnd):
     Check to see if all matches report
     """
     with get_db().begin() as conn:
-        print("testing")
         if not all_reported(tid, rnd):
             raise PairingException("Not all matches have reported result")
         update_byes_recieved(tid)
@@ -203,7 +201,6 @@ def close_round(tid, rnd):
         )
 
         update_scores(tid)
-        print("A thing")
         update_bias(tid)
         update_sos(tid)
         update_esos(tid)
@@ -242,7 +239,6 @@ def record_result(mid, corp_score, runner_score):
         match = conn.execute(
             select(table_match).where(table_match.c.id == mid)
         ).fetchone()
-        # .execute("SELECT * from match where id = ?", (mid,)).fetchone()
         if get_player(match["corp_id"]).is_bye or get_player(match["runner_id"]).is_bye:
             return
         conn.execute(
@@ -250,19 +246,10 @@ def record_result(mid, corp_score, runner_score):
             .where(table_match.c.id == mid)
             .values(corp_score=corp_score, runner_score=runner_score)
         )
-        #     "UPDATE match SET corp_score = ?, runner_score = ? WHERE id = ?",
-        #     (
-        #         corp_score,
-        #         runner_score,
-        #         mid,
-        #     ),
-        # )
-        # db.commit()
 
 
 def update_scores(tid):
     with get_db().begin() as conn:
-        print("scoring")
         scores_table = conn.execute(
             text(
                 """
@@ -286,9 +273,7 @@ def update_scores(tid):
             ),
             {"tid": tid},
         ).fetchall()
-        print("got scores")
         for player in scores_table:
-            print(player)
             conn.execute(
                 text(
                     "UPDATE player SET score = :score WHERE id = :pid AND is_bye = false",
@@ -299,7 +284,6 @@ def update_scores(tid):
                     "pid": player["id"],
                 },
             )
-        print("updated scores")
     update_bias(tid)
 
 

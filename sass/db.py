@@ -214,7 +214,8 @@ def delete_pairings(tid, rnd):
             {"tid": tid, "rnd": rnd},
         )
         conn.execute(
-            text("DELETE FROM player WHERE is_bye = true AND tid = :tid"), {"tid": tid}
+            text("UPDATE player SET active = false WHERE is_bye = true AND tid = :tid"),
+            {"tid": tid},
         )
 
 
