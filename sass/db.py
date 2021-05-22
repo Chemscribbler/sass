@@ -189,12 +189,7 @@ def get_last_rnd(tid):
     q = (
         get_db()
         .connect()
-        .execute(
-            func.max(metadata.tables["match"].c.rnd).where(
-                metadata.tables["match"].c.tid == tid
-            )
-        )
-        .execute("SELECT MAX(rnd) as rnd FROM match WHERE tid=?", (tid,))
+        .execute(text("SELECT MAX(rnd) as rnd FROM match WHERE tid=:tid"), {"tid": tid})
         .fetchone()
     )
     return q["rnd"]
@@ -236,7 +231,7 @@ def get_json(tid):
     p = get_players(tid)
     t_json = {
         "name": t["title"],
-        "date": t["t_date"],
+        # "date": t["t_date"],
         "cutToTop": 0,
         "preliminaryRounds": get_last_rnd(tid),
         "players": [],
