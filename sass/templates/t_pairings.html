@@ -1,5 +1,15 @@
 {% extends "t_base.html" %}
 
+{% block header %}
+<H1><a href={{url_for('manager.main', tid=data.t.id)}}>{{data.t.title}}</a> - Round {{data.rnd}}</H1>
+<h3>
+    Round Select -
+    {% for rnd in data.rnd_list %}
+    <a href={{ url_for('manager.pairings', tid=data.t.id, rnd=rnd.rnds)}}>{{rnd.rnds}}</a>
+    {% endfor %}
+</h3>
+{% endblock %}
+
 {% block content %}
 <table class="table table-striped">
     <thead>
