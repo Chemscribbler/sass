@@ -38,7 +38,9 @@ def create_app(test_config=None):
     db.init_app(app)
 
     from . import manager
+    from . import docs
 
     app.register_blueprint(manager.bp)
+    app.register_blueprint(docs.bp)
 
     return app

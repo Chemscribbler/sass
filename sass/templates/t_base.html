@@ -4,12 +4,6 @@
 {{data.t.title}}
 {% endblock %}
 {% block header %}
-<nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
-        <a class="navbar-brand" aria-current="page" href={{url_for('manager.home')}}>Aesop's Tables</a>
-    </div>
-</nav>
-
 <H1><a href={{url_for('manager.main', tid=data.t.id)}}>{{data.t.title}}</a></H1>
 <h3>
     Round Select -

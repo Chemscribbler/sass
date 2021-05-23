@@ -5,7 +5,18 @@
 <form action={{ url_for('manager.start_tournament', tid=data.t.id, rnd=data.t.current_rnd) }} method="post">
     <button name="start_t" , type="submit" , class="btn btn-primary">Start Tournament</button>
 </form>
+{% else %}
+<div class="p-1">
+    <form action={{ url_for('manager.make_pairings', tid=data.t.id )}} method="GET">
+        <button type="submit" class="btn btn-primary">Pair Round</button>
+    </form>
+</div>
 {% endif %}
+<div class="p-1">
+    <form action={{ url_for('manager.register', tid=data.t.id) }} method="GET">
+        <button type="submit" class="btn btn-primary">Add Player</button>
+    </form>
+</div>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -35,35 +46,25 @@
         <td>
             {% if plr.active %}
             <form action={{ url_for('manager.drop_player' , tid=plr.tid, pid=plr.id) }} method="put">
-                <button type="submit" class="btn btn-warning">▼</button>
+                <button type="submit" class="btn btn-warning">▼ Drop</button>
             </form>
             {% else %}
             <form action={{ url_for('manager.undrop_player' , tid=plr.tid, pid=plr.id) }} method="put">
-                <button type="submit" class="btn btn-success">▲</button>
+                <button type="submit" class="btn btn-success">▲ Undrop</button>
             </form>
             {% endif %}
             {% if data.t.current_rnd == 0 %}
             <form action={{ url_for('manager.delete_player' , tid=plr.tid, pid=plr.id) }} method="post">
-                <button type="submit" class="btn btn-danger">🗑</button>
+                <button type="submit" class="btn btn-danger">🗑 Delete</button>
             </form>
             {% endif %}
             <form action={{url_for('manager.edit_player', tid=plr.tid, pid=plr.id)}} method="get">
-                <button type="submit" class="btn btn-primary">📝</button>
+                <button type="submit" class="btn btn-primary">📝 Edit</button>
             </form>
         </td>
     </tr>
     {% endfor %}
 </table>
-<div class="p-1">
-    <form action={{ url_for('manager.register', tid=data.t.id) }} method="GET">
-        <button type="submit" class="btn btn-primary">Add Player</button>
-    </form>
-</div>
-<div class="p-1">
-    <form action={{ url_for('manager.make_pairings', tid=data.t.id )}} method="GET">
-        <button type="submit" class="btn btn-primary">Pair Round</button>
-    </form>
-</div>
 <div class="p-1">
     <form action={{ url_for('manager.change_t_status', tid=data.t.id)}} method="POST">
         <button type="submit" class="btn btn-warning">

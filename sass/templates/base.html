@@ -6,6 +6,15 @@
         integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
     <title>{% block title %}{% endblock %} - Aesop's Tables</title>
 </head>
+<meta charset="utf-8">
+
+<nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" aria-current="page" href={{url_for('manager.home')}}>Aesop's Tables</a>
+        <a class="navbar-link" href={{url_for('docs.how_to')}}>How To</a>
+        <a class="navbar-link" href={{url_for('docs.about')}}>Why/About</a>
+    </div>
+</nav>
 
 <body class="p-5">
     {% block header %}{% endblock %}
