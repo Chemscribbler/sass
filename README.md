@@ -1,36 +1,12 @@
-# Side Aware Swiss Software (SASS)
+# Side Aware Swiss Software (SASS) and Aesop's Tables
 
-## A tournament manager app designed for single sided swiss Netrunner tournaments
+## Overview
 
-This app is meant to be an interactive application for tournament managers to seamlessly run single sided (or double sided if they're feeling perverse).
+Currently this directory has two different, related, but now seperate projects in it. The App folder contains a python implementation of single sided swiss for netrunner. It runs as a command line interface tool, and reads writes outputs to csvs and jsons. I'm not intending to continue maintaining this, and it may disappear at some point in the future.
 
-What I'm looking to do:
+The second folder, named sass, is what runs [Aesop's Tables](http://aesopstables.net/). This is a Flask app that contects to a PostgreSQL database to run single sided swiss tournaments. This is main my development target. My current goal is getting close to, or exceeding current [Cobra](http://cobr.ai/) capabilities. The list of tasks, and my rough ordering of them can be found in the task list file.
 
-Currently I've got a very simple system set up where I can run single CLI commands to run a tournament. It imports pairings (potentially including tables and results) from a json. It also export a pairings json and a standings json. The standings json also contains all the info about pairings and tables.
-
-Things I would like to do:
-- Have a basic web interface to allow someone to run a tournament (real paint the rest of the owl shit here)
-- Store tournament data in some sort of database- and have the front-end communicate with that (though maybe this isn't necessary and tournaments could be run in memory... but from the little I know this sounds bad)
-- Improve my backend to be cleaner and easier to tinker with
-
-I don't really know any web dev or database stuff. Trying to teach myself a little. So I'd be happy with help ranging from drawing some boxes and saying use this tool, to being a person I can bug with questions, to just doing full pull requests/development. If someone wants to help develop I'm happy to write up more specs/user stories, otherwise the best thing would be some people I could ask questions to.
-
-My current plan would be to try and build out a simple app using Flask and HTML/CSS to do all my front end stuff, figure out some way to convert my app that's running in memory to working with a database.
-
-
-## Current Outline
-
-Right now a simple python app exists that can import and export jsons in a particular format (closely matching [cobra's](http://cobr.ai/)).
-It does this using a custom Tournament class. In every tournament there is a dictionary of players (each made of a Player class). Every round goes into a round
-dictionary and contains some admin info about the round and a dictionary of Tables (the final class).
-
-The notable functions right now are:
-- Tournament.add_player(name, corp_id*, runner_id*)
-- Tournament.pair_round()
-- Tournament.report_result(table_id, c_score, r_score, round*)
-- Tournament.export_standings()
-
-To run a tournament you use add_players, start_tournament, pair_round, report_result, and close_round. Can use import_pairings, potentially with the overwrite, to report pairings. 
+I'm a novice, self taught coder, so would really appreciate suggestions/pull requests from anyone who wants to help.
 
 
 ## How the pairing algorithm works
