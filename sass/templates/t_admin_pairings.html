@@ -28,9 +28,9 @@
         <th>{{match['runner_player']}}</th>
         <th>
             <form action={{ url_for('manager.report_result', mid=match.id )}} method="post">
-                <button name='result' , type="submit" , value="c_win" class="btn btn-primary">3-0</button>
-                <button name='result' , type="submit" , value="tie" class="btn btn-primary">1-1</button>
-                <button name='result' , type="submit" , value="r_win" class="btn btn-primary">0-3</button>
+                <button name='result' , type="submit" , value="c_win" class="btn btn-primary">Corp Win</button>
+                <button name='result' , type="submit" , value="tie" class="btn btn-primary">Tie</button>
+                <button name='result' , type="submit" , value="r_win" class="btn btn-primary">Runner Win</button>
             </form>
         </th>
     </tr>

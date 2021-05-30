@@ -28,10 +28,10 @@
         <td>{{plr['score']}}</td>
         <td>{{plr['sos']}}</td>
         <td>{{plr['esos']}}</td>
-        <td>{{plr['bias']}}</td>
+        <td>{{clean_bias(plr['bias'])}}</td>
         {% if data.t.current_rnd != 0 %}
-        <td>{{plr['corp_id']}}</td>
-        <td>{{plr['runner_id']}}</td>
+        <td><span class="{{get_id(plr['corp_id'])['faction']}}">{{get_id(plr['corp_id'])['name']}}</span></td>
+        <td><span class="{{get_id(plr['runner_id'])['faction']}}">{{get_id(plr['runner_id'])['name']}}</span></td>
         {% else %}
         <td>-</td>
         <td>-</td>

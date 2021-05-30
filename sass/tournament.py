@@ -29,14 +29,6 @@ def pair_round(tid, rnd):
                     rnd=rnd,
                     match_num=i + 1,
                 )
-                # "INSERT INTO match (corp_id, runner_id, tid, rnd, match_num) VALUES (?, ?, ?, ?, ?)",
-                # (
-                #     match[0],
-                #     match[1],
-                #     tid,
-                #     rnd,
-                #     i + 1,
-                # ),
             )
     score_byes(tid, rnd)
 
