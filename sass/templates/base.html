@@ -14,11 +14,11 @@
         <a class="navbar-brand" aria-current="page" href={{url_for('manager.home')}}>Aesop's Tables</a>
         <a class="navbar-link" href={{url_for('docs.how_to')}}>How To</a>
         <a class="navbar-link" href={{url_for('docs.about')}}>About</a>
-        {% if g.user %}
+        <!-- {% if g.user %}
         <a class="navbar-brand" href={{url_for('auth.logout')}}>Logout</a>
         {% else %}
         <a class="navbar-brand" href={{url_for('auth.login')}}>Login</a>
-        {% endif %}
+        {% endif %} -->
     </div>
 </nav>
 
