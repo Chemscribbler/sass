@@ -231,7 +231,6 @@ def get_json(tid):
     p = get_players(tid)
     t_json = {
         "name": t["title"],
-        # "date": t["t_date"],
         "cutToTop": 0,
         "preliminaryRounds": get_last_rnd(tid),
         "players": [],
@@ -275,3 +274,23 @@ def get_json(tid):
         t_json["rounds"].append(matches)
 
     return t_json
+
+
+def get_stats(tid):
+    db = get_db()
+    with db.begin() as conn:
+        match_table = conn.execute(
+            text(
+                """select match.id, match.corp_id, match.runner_id, match.corp_score, match.runner_score,
+                corp_plr.p_name, corp_plr.corp_id, corp_plr.is_bye,
+                runner_plr.p_name, runner_plr.runner_id, runner_plr.is_bye
+                FROM match
+                LEFT join player corp_plr
+                ON match.corp_id = corp_plr.id
+                LEFT JOIN player runner_plr
+                ON match.runner_id = runner_plr.id
+                WHERE corp_plr.is_bye = false AND runner_plr.is_bye = false AND match.tid = :tid""",
+                {"tid": tid},
+            ).fetchall()
+        )
+    return match_table
