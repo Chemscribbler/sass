@@ -1,0 +1,45 @@
+Steps:
+
+Create a VM instance- Ubuntu is easy to work with
+SSH connect
+sudo apt update
+sudo apt install python, pip, and postgres
+install venv and do everything in that venv, it will make your life easier
+
+actual requirements at the time being:
+    networkx
+    sqlalchemy
+    flask
+    flask_login* (not implemented but called iirc)
+    configparser
+    markup
+    pg8000
+    sqlparse
+    gunicorn
+
+Copy over files (currently using WinSCP) that run the server
+
+Follow these instructions for setting up the Postgres DB
+https://cloud.google.com/community/tutorials/setting-up-postgres
+
+Create the starting tables (can use PG4Admin or terminal, postgres.sql is the correct setup for now)
+
+all python things are under ~/.local/bin/APP_NAME so to run them you need to use that as the path
+So to start the server using gunicorn use:
+ ~/.local/bin/gunicorn -b :8080 main:app
+ This makes it web accessible without anyone having to enter the port
+ sudo home/pruyn/venv/bin/gunicorn -b :80 main:app
+
+ Make sure to update the config.ini to the correct username and password for the database
+
+
+
+Attempted to follow this to get the url working, but I suspect I need to do some port forwarding etc
+https://cloud.google.com/dns/docs/tutorials/create-domain-tutorial
+
+
+
+
+http://104.198.171.37
+http://104.198.171.37:8080
+http://104.198.171.37:8000

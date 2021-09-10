@@ -13,6 +13,7 @@ from flask import (
 )
 
 from werkzeug.exceptions import abort
+from sass import tournament
 
 from sass.db import (
     add_player,
@@ -21,6 +22,7 @@ from sass.db import (
     get_match,
     get_players,
     get_matches,
+    get_stats,
     get_tournament,
     get_rnd_list,
     get_json,
@@ -257,3 +259,8 @@ def report_json(tid):
 def change_t_status(tid):
     switch_tournament_activity(tid)
     return redirect(url_for("manager.admin", tid=tid), code=303)
+
+
+@bp.route("/<int:tid>/stats", methods=["GET"])
+def stats(tid):
+    table = get_stats(tid)
