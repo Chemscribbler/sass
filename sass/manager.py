@@ -36,6 +36,7 @@ from sass.db import (
     get_player,
 )
 from sass.tournament import (
+    existing_pairings,
     pair_round,
     close_round,
     record_result,
@@ -192,7 +193,8 @@ def make_pairings(tid):
         return redirect(
             url_for("manager.admin_pairings", tid=tid, rnd=t["current_rnd"] - 1)
         )
-    if not all_reported(tid, t["current_rnd"]):
+    print(t["current_rnd"])
+    if existing_pairings(tid, t["current_rnd"]):
         flash("Pairing for this round already exists")
         return redirect(
             url_for("manager.admin_pairings", tid=tid, rnd=t["current_rnd"])
@@ -223,7 +225,7 @@ def finish_round(tid, rnd):
         close_round(tid, rnd)
         return redirect(url_for("manager.admin", tid=tid), code=303)
     except PairingException as e:
-        print(e)
+        # print(e)
         flash("Not all matches have results")
         return redirect(
             url_for(

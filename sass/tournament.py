@@ -57,10 +57,10 @@ def make_pairings(plrs):
         p2 = get_player(pair[1])
         corp_player_id, runner_player_id, side_bias_cost = get_side_tuple(p1, p2)
         if side_bias_cost is None:
-            print(f"{p1.p_name} v. {p2.p_name} cannot play")
+            # print(f"{p1.p_name} v. {p2.p_name} cannot play")
             continue
         score_cost = calc_score_cost(p1["score"], p2["score"])
-        print(f"{p1.p_name} v. {p2.p_name}: {side_bias_cost+score_cost}")
+        # print(f"{p1.p_name} v. {p2.p_name}: {side_bias_cost+score_cost}")
         graph.add_edge(
             p1,
             p2,
@@ -464,6 +464,19 @@ def update_byes_recieved(tid):
                 text("UPDATE player SET received_bye = true WHERE id = :pid"),
                 {"pid": i["id"]},
             )
+
+
+def existing_pairings(tid, rnd):
+    q = (
+        get_db()
+        .connect()
+        .execute(
+            text("SELECT * FROM match where tid = :tid and rnd = :rnd"),
+            {"tid": tid, "rnd": rnd},
+        )
+        .fetchone()
+    )
+    return q
 
 
 def all_reported(tid, rnd):
