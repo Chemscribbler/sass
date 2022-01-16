@@ -84,12 +84,42 @@ def get_player(pid):
 
 def get_players(tid):
     db = get_db()
-    player = metadata.tables["player"]
+    # player = metadata.tables["player"]
+    # return db.execute(
+    #     select(player)
+    #     .where(player.c.tid == tid)
+    #     .where(player.c.is_bye == False)
+    #     .order_by(player.c.score.desc(), player.c.sos.desc(), player.c.esos.desc())
+    # ).fetchall()
+
     return db.execute(
-        select(player)
-        .where(player.c.tid == tid)
-        .where(player.c.is_bye == False)
-        .order_by(player.c.score.desc(), player.c.sos.desc(), player.c.esos.desc())
+        text(
+            """
+            SELECT id, name, corp_id, runner_id, score, sos, esos, bias,
+            sum(coalesce(corp_points,0)) AS corp_points,
+            sum(coalesce(runner_points,0)) AS runner_points
+            from(
+                select p.id as id, p.p_name as name, p.corp_id as corp_id, p.runner_id as runner_id,
+                p.score as score, p.sos as sos, p.esos as esos, p.bias as bias,
+                sum(m.corp_score) AS corp_points, 0 AS runner_points
+                FROM player p
+                INNER JOIN match m on p.id = m.corp_id
+                WHERE p.tid = :tid and p.is_bye = false
+                group by p.id
+                UNION
+                SELECT p.id as id, p.p_name as name, p.corp_id as corp_id, p.runner_id as runner_id,
+                p.score as score, p.sos as sos, p.esos as esos, p.bias as bias,
+                0 AS corp_points, sum(m.runner_score) AS runner_points
+                FROM player p
+                INNER JOIN match m on p.id = m.runner_id
+                WHERE p.tid = :tid and p.is_bye=false
+                group by p.id
+            ) as t
+            group by t.id, t.name, t.corp_id, t.runner_id, t.score, t.sos, t.esos, t.bias
+            order by t.score DESC, t.sos DESC, t.esos DESC 
+            """
+        ),
+        {"tid": tid},
     ).fetchall()
 
 

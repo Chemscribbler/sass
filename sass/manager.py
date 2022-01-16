@@ -59,7 +59,7 @@ def make_data_package(tid, rnd=None):
         "players": get_players(tid),
         "matches": matches,
         "rnd_list": get_rnd_list(tid),
-        "rnd": rnd,
+        "rnd": rnd
     }
 
 

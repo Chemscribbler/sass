@@ -24,14 +24,17 @@
     {% for plr in data.players %}
     <tr>
         <td>{{loop.index0 +1}}</td>
-        <td>{{plr['p_name']}}</td>
+        <td>{{plr['name']}}</td>
         <td>{{plr['score']}}</td>
         <td>{{plr['sos']}}</td>
         <td>{{plr['esos']}}</td>
         <td>{{clean_bias(plr['bias'])}}</td>
         {% if data.t.current_rnd != 0 %}
-        <td><span class="{{get_id(plr['corp_id'])['faction']}}">{{get_id(plr['corp_id'])['name']}}</span></td>
-        <td><span class="{{get_id(plr['runner_id'])['faction']}}">{{get_id(plr['runner_id'])['name']}}</span></td>
+        <td><span class="{{get_id(plr['corp_id'])['faction']}}"> {{get_id(plr['corp_id'])['name']}}
+                ({{plr['corp_points']}})</span>
+        </td>
+        <td><span class="{{get_id(plr['runner_id'])['faction']}}">{{get_id(plr['runner_id'])['name']}}
+                ({{plr['runner_points']}})</span></td>
         {% else %}
         <td>-</td>
         <td>-</td>
