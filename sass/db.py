@@ -95,12 +95,12 @@ def get_players(tid):
     return db.execute(
         text(
             """
-            SELECT id, tid, name, corp_id, runner_id, score, sos, esos, bias,
+            SELECT id, tid, name, corp_id, runner_id, score, sos, esos, bias, active,
             sum(coalesce(corp_points,0)) AS corp_points,
             sum(coalesce(runner_points,0)) AS runner_points
             from(
                 select p.id as id, p.tid as tid, p.p_name as name, p.corp_id as corp_id, p.runner_id as runner_id,
-                p.score as score, p.sos as sos, p.esos as esos, p.bias as bias,
+                p.score as score, p.sos as sos, p.esos as esos, p.bias as bias, p.active as active,
                 sum(m.corp_score) AS corp_points, 0 AS runner_points
                 FROM player p
                 INNER JOIN match m on p.id = m.corp_id
@@ -108,14 +108,14 @@ def get_players(tid):
                 group by p.id
                 UNION
                 SELECT p.id as id, p.tid as tid, p.p_name as name, p.corp_id as corp_id, p.runner_id as runner_id,
-                p.score as score, p.sos as sos, p.esos as esos, p.bias as bias,
+                p.score as score, p.sos as sos, p.esos as esos, p.bias as bias, p.active as active,
                 0 AS corp_points, sum(m.runner_score) AS runner_points
                 FROM player p
                 INNER JOIN match m on p.id = m.runner_id
                 WHERE p.tid = :tid and p.is_bye=false
                 group by p.id
             ) as t
-            group by t.id, t.name, t.tid, t.corp_id, t.runner_id, t.score, t.sos, t.esos, t.bias
+            group by t.id, t.name, t.tid, t.corp_id, t.runner_id, t.score, t.sos, t.esos, t.bias, t.active
             order by t.score DESC, t.sos DESC, t.esos DESC 
             """
         ),
