@@ -103,7 +103,7 @@ def get_players(tid):
                 p.score as score, p.sos as sos, p.esos as esos, p.bias as bias, p.active as active,
                 sum(m.corp_score) AS corp_points, 0 AS runner_points
                 FROM player p
-                INNER JOIN match m on p.id = m.corp_id
+                LEFT JOIN match m on p.id = m.corp_id
                 WHERE p.tid = :tid and p.is_bye = false
                 group by p.id
                 UNION
@@ -111,7 +111,7 @@ def get_players(tid):
                 p.score as score, p.sos as sos, p.esos as esos, p.bias as bias, p.active as active,
                 0 AS corp_points, sum(m.runner_score) AS runner_points
                 FROM player p
-                INNER JOIN match m on p.id = m.runner_id
+                LEFT JOIN match m on p.id = m.runner_id
                 WHERE p.tid = :tid and p.is_bye=false
                 group by p.id
             ) as t
