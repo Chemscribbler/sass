@@ -271,8 +271,8 @@ def update_scores(tid):
                     "UPDATE player SET score = :score WHERE id = :pid AND is_bye = false",
                 ),
                 {
-                    "score": float(player["corp_points"])
-                    + float(player["runner_points"]),
+                    "score": int(player["corp_points"])
+                    + int(player["runner_points"]),
                     "pid": player["id"],
                 },
             )
