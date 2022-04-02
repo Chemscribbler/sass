@@ -278,7 +278,7 @@ def get_json(tid):
         t_json["players"].append(
             {
                 "id": player["id"],
-                "name": player["p_name"],
+                "name": player["name"],
                 "rank": i + 1,
                 "corpIdentity": player["corp_id"],
                 "runnerIdentity": player["runner_id"],
