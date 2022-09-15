@@ -15,7 +15,7 @@ from flask import (
 from werkzeug.exceptions import abort
 from sass import tournament
 
-from sass.db import (
+from sass.db_ops import (
     add_player,
     create_tournament,
     delete_pairings,

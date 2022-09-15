@@ -12,7 +12,7 @@ from sqlalchemy.sql.expression import distinct, insert, select, table, text, upd
 from sqlalchemy.sql.schema import MetaData, Table
 from sqlalchemy import func
 import sqlparse
-
+from sass import db_ops
 from werkzeug.exceptions import abort
 
 
@@ -52,14 +52,32 @@ def get_tournament(tid):
 
 def create_tournament(title, date=datetime.date.today()):
     db = get_db()
-    tournament_table = metadata.tables["tournament"]
-    with db.begin() as conn:
-        stmt = (
-            insert(tournament_table)
-            .values(title=title, t_date=date)
-            .returning(tournament_table)
-        )
-        return conn.execute(stmt).fetchone()
+    db.execute(
+        text(
+            """
+            INSERT INTO tournament (title, t_date)
+            VALUES (:title, :date)
+            """
+        ),{"title":title, "date":date}
+    )
+    return db.execute(
+        text(
+        """
+        SELECT * from tournament
+        WHERE title = :title
+        """
+        ),{"title":title}
+    ).fetchone()
+    
+    # db = get_db()
+    # tournament_table = metadata.tables["tournament"]
+    # with db.begin() as conn:
+    #     stmt = (
+    #         insert(tournament_table)
+    #         .values(title=title, t_date=date)
+    #         .returning(tournament_table)
+    #     )
+    #     return conn.execute(stmt).fetchone()
 
 
 def add_player(tid, name, corp_id, runner_id):

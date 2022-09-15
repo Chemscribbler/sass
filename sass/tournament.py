@@ -1,5 +1,6 @@
+from copy import copy
 from sqlalchemy.sql.expression import insert, text, select, update
-from sass.db import get_db, get_tournament, get_active_players, get_player, metadata
+from sass.db_ops import get_db, get_tournament, get_active_players, get_player, metadata
 from networkx import Graph, max_weight_matching
 from itertools import combinations
 from random import random
@@ -192,11 +193,12 @@ def close_round(tid, rnd):
             {"tid": tid},
         )
 
-        update_scores(tid)
-        update_bias(tid)
-        update_sos(tid)
-        update_esos(tid)
-        t = get_tournament(tid)
+    update_scores(tid)
+    update_bias(tid)
+    update_sos(tid)
+    update_esos(tid)
+    t = get_tournament(tid)
+    with get_db().begin() as conn:
         if rnd == t["current_rnd"]:
             conn.execute(
                 text("UPDATE tournament SET current_rnd = :rnd WHERE id = :tid"),
@@ -241,6 +243,7 @@ def record_result(mid, corp_score, runner_score):
 
 
 def update_scores(tid):
+    scores_table = []
     with get_db().begin() as conn:
         scores_table = conn.execute(
             text(
@@ -265,7 +268,9 @@ def update_scores(tid):
             ),
             {"tid": tid},
         ).fetchall()
+    with get_db().begin() as conn:
         for player in scores_table:
+            print(player)
             conn.execute(
                 text(
                     "UPDATE player SET score = :score WHERE id = :pid AND is_bye = false",
@@ -351,8 +356,8 @@ def update_sos(tid):
                 text("UPDATE player SET sos = :sos WHERE id = :pid"),
                 {
                     "sos": round(
-                        decimal.Decimal(player["total_opp_score"])
-                        / decimal.Decimal(max(player["total_opp_games_played"], 1)),
+                        player["total_opp_score"]
+                        / max(player["total_opp_games_played"], 1),
                         3,
                     ),
                     "pid": player["id"],
@@ -392,8 +397,8 @@ def update_esos(tid):
                 text("UPDATE player SET esos = :esos WHERE id = :pid"),
                 {
                     "esos": round(
-                        decimal.Decimal(player["total_opp_sos"])
-                        / decimal.Decimal(max(player["total_opp_games_played"], 1)),
+                        player["total_opp_sos"]
+                        /max(player["total_opp_games_played"], 1),
                         4,
                     ),
                     "pid": player["id"],
