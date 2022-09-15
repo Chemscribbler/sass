@@ -2,9 +2,7 @@
 
 ## Overview
 
-Currently this directory has two different, related, but now seperate projects in it. The App folder contains a python implementation of single sided swiss for netrunner. It runs as a command line interface tool, and reads writes outputs to csvs and jsons. I'm not intending to continue maintaining this, and it may disappear at some point in the future.
-
-The second folder, named sass, is what runs [Aesop's Tables](http://aesopstables.net/). This is a Flask app that contects to a PostgreSQL database to run single sided swiss tournaments. This is main my development target. My current goal is getting close to, or exceeding current [Cobra](http://cobr.ai/) capabilities. The list of tasks, and my rough ordering of them can be found in projects tab.
+sass, is what runs [Aesop's Tables](http://aesopstables.net/). This is a Flask app that contects to a SQL database to run single sided swiss tournaments. This is main my development target. My current goal is getting close to, or exceeding current [Cobra](http://cobr.ai/) capabilities. The list of tasks, and my rough ordering of them can be found in projects tab.
 
 I'm a novice, self taught coder, so would really appreciate suggestions/pull requests from anyone who wants to help.
 
