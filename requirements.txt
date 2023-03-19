@@ -9,4 +9,4 @@ python-dotenv
 regex
 requests
 sqlparse
-SQLAlchemy
+SQLAlchemy==1.4.47
